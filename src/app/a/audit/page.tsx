@@ -9,6 +9,7 @@ import { dateTimeLabel } from "@/lib/format";
 import { Card, EmptyState, ListGroup, ListRow, PageLoader, Sheet } from "@/components/ui";
 import { PageHeader } from "@/components/app/shell";
 import { DetailLine, SearchInput, unwrap } from "@/components/admin/bits";
+import { ReauthGate, maskCode } from "@/components/admin/reauth-gate";
 
 type Entry = {
   id: string; user_id: string | null; action: string; entity_type: string | null; entity_id: string | null;
@@ -16,6 +17,10 @@ type Entry = {
 };
 
 export default function AuditPage() {
+  return <ReauthGate title="Audit Log"><Audit /></ReauthGate>;
+}
+
+function Audit() {
   const { settings } = useApp();
   const log = useData<Entry[]>("a:audit", async () => {
     const res = await sb().from("audit_log").select("*, profiles(full_name)").order("created_at", { ascending: false }).limit(200);
@@ -27,7 +32,9 @@ export default function AuditPage() {
   const q = query.trim().toLowerCase();
   const list = (log.data ?? []).filter((e) => !q || e.action.toLowerCase().includes(q));
   const sel = (log.data ?? []).find((e) => e.id === selId) ?? null;
-  const json = (v: unknown) => (v === null || v === undefined ? "—" : JSON.stringify(v, null, 2));
+  // Access codes are never shown in full in the log
+  const json = (v: unknown) => (v === null || v === undefined ? "—"
+    : JSON.stringify(v, (k, val) => (k === "code" && typeof val === "string" ? maskCode(val) : val), 2));
 
   return (
     <>

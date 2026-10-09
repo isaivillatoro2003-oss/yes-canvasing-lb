@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Copy, KeyRound, Plus, Share2 } from "lucide-react";
+import { Copy, Eye, EyeOff, KeyRound, Plus, Share2 } from "lucide-react";
 import { useApp } from "@/lib/app-context";
 import { useData, useNow } from "@/lib/hooks";
 import { rpc, sb, toAppError } from "@/lib/supabase";
@@ -10,6 +10,7 @@ import type { AccessCode, Team } from "@/lib/types";
 import { Badge, Button, Card, EmptyState, Field, ListGroup, ListRow, PageLoader, Segmented, Select, Sheet, Stepper, TextArea, useConfirm } from "@/components/ui";
 import { PageHeader } from "@/components/app/shell";
 import { DetailLine, unwrap } from "@/components/admin/bits";
+import { ReauthGate, maskCode } from "@/components/admin/reauth-gate";
 
 type CodeRow = AccessCode & { teams: { team_name: string } | null };
 type Redemption = { used_at: string; profiles: { full_name: string; email: string } | null };
@@ -23,6 +24,11 @@ function statusOf(c: AccessCode, now: number): Status {
 }
 
 export default function CodesPage() {
+  return <ReauthGate title="Access Codes"><Codes /></ReauthGate>;
+}
+
+/** Codes are masked (YES-••••MZ) until the admin taps "Show". */
+function Codes() {
   const { settings, toast } = useApp();
   const confirm = useConfirm();
   const now = useNow(30000);
@@ -47,6 +53,7 @@ export default function CodesPage() {
   const [busy, setBusy] = useState(false);
 
   const [selId, setSelId] = useState<string | null>(null);
+  const [reveal, setReveal] = useState(false);
   const sel = (codes.data ?? []).find((c) => c.id === selId) ?? null;
   const redemptions = useData<Redemption[]>(`a:code-uses:${selId ?? "none"}`, async () => {
     if (!selId) return [];
@@ -98,7 +105,7 @@ export default function CodesPage() {
 
   async function toggle(c: CodeRow) {
     const next = !c.active;
-    const ok = await confirm.ask(next ? `Reactivate ${c.code}?` : `Revoke ${c.code}?`, {
+    const ok = await confirm.ask(next ? `Reactivate ${maskCode(c.code)}?` : `Revoke ${maskCode(c.code)}?`, {
       body: next ? "The code can be used again if it has uses left." : "Nobody will be able to sign up with this code anymore.",
       confirm: next ? "Reactivate" : "Revoke", tone: next ? "primary" : "danger",
     });
@@ -130,8 +137,8 @@ export default function CodesPage() {
             {codes.data.map((c) => {
               const s = statusOf(c, now);
               return (
-                <ListRow key={c.id} onClick={() => setSelId(c.id)}
-                  title={<span className="font-semibold tracking-wider">{c.code}</span>}
+                <ListRow key={c.id} onClick={() => { setReveal(false); setSelId(c.id); }}
+                  title={<span className="font-semibold tracking-wider">{maskCode(c.code)}</span>}
                   subtitle={`${c.role === "leader" ? "Leader" : "Student"} · ${c.current_uses}/${c.max_uses} used · ${c.expires_at ? `expires ${dateLabel(c.expires_at)}` : "no expiry"}${c.teams ? ` · ${c.teams.team_name}` : ""}`}
                   trailing={<Badge tone={s.tone}>{s.label}</Badge>} />
               );
@@ -192,7 +199,9 @@ export default function CodesPage() {
         )}
       </Sheet>
 
-      <Sheet open={!!sel} onClose={() => setSelId(null)} title={sel ? <span className="tracking-wider">{sel.code}</span> : undefined}
+      <Sheet open={!!sel} onClose={() => setSelId(null)} title={sel ? <span className="inline-flex items-center gap-2 tracking-wider">{reveal ? sel.code : maskCode(sel.code)}
+          <button type="button" aria-label={reveal ? "Hide code" : "Show code"} onClick={() => setReveal((v) => !v)}
+            className="pressable grid size-8 place-items-center rounded-lg bg-sunken text-muted">{reveal ? <EyeOff className="size-4" /> : <Eye className="size-4" />}</button></span> : undefined}
         footer={sel ? (
           <Button block size="lg" variant={sel.active ? "danger" : "success"} loading={busy} onClick={() => toggle(sel)}>
             {sel.active ? "Revoke code" : "Reactivate code"}
