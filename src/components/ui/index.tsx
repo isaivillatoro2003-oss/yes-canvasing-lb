@@ -172,6 +172,7 @@ export const Field = forwardRef<HTMLInputElement, FieldProps>(function Field({ l
       <input
         ref={ref}
         id={fid}
+        maxLength={rest.type === "date" ? undefined : 200}
         aria-invalid={!!error || undefined}
         aria-describedby={error || hint ? `${fid}-msg` : undefined}
         className={cn(
@@ -194,7 +195,7 @@ export function TextArea({ label, className, ...rest }: React.TextareaHTMLAttrib
   return (
     <label htmlFor={id} className={cn("block", className)}>
       <span className="mb-1.5 block px-1 text-sm font-medium text-muted">{label}</span>
-      <textarea id={id} rows={3}
+      <textarea id={id} rows={3} maxLength={1000}
         className="w-full rounded-2xl bg-elevated px-4 py-3 text-[16px] shadow-card outline-none ring-1 ring-line placeholder:text-subtle focus:ring-2 focus:ring-[var(--navy-500)]"
         {...rest} />
     </label>

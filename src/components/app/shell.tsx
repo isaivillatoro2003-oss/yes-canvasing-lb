@@ -7,11 +7,12 @@ import {
   BarChart3, BookOpen, CloudOff, Home, LayoutDashboard, MoreHorizontal, Plus, RefreshCw, Settings, Users, Wallet, ChevronLeft,
 } from "lucide-react";
 import { useApp, useRequireRole } from "@/lib/app-context";
+import { rpc, toAppError } from "@/lib/supabase";
 import { subscribeQueue, type QueuedTx } from "@/lib/sync";
 import { cn } from "@/lib/format";
 import type { Role } from "@/lib/types";
 import type { TKey } from "@/lib/i18n";
-import { PageLoader } from "@/components/ui";
+import { Button, PageLoader, Sheet } from "@/components/ui";
 
 export function Logo({ size = 40, className }: { size?: number; className?: string }) {
   return (
@@ -122,6 +123,7 @@ export function AppShell({ roles, children, tabRole }: { roles: Role[]; children
       )}
       <main className="pb-tabbar mx-auto max-w-lg">{children}</main>
       <TabBar role={tabRole ?? profile?.role ?? "student"} />
+      <PrivacyGate />
     </div>
   );
 }
@@ -146,5 +148,29 @@ export function PageHeader({ title, subtitle, back, action, showSync = true }: {
       <h1 className="text-title mt-1">{title}</h1>
       {subtitle && <p className="mt-1 text-[15px] text-muted">{subtitle}</p>}
     </header>
+  );
+}
+
+/** Accounts created before the privacy notice existed accept it once (Lebanon Law 81/2018, Art. 88). */
+function PrivacyGate() {
+  const { profile, refreshProfile, toast } = useApp();
+  const [busy, setBusy] = useState(false);
+  // null = column exists and nothing recorded yet; undefined = database not migrated yet (don't nag)
+  const open = !!profile && profile.privacy_accepted_at === null;
+  async function accept() {
+    setBusy(true);
+    try { await rpc("accept_privacy"); await refreshProfile(); }
+    catch (e) { toast(toAppError(e).message, "error"); }
+    finally { setBusy(false); }
+  }
+  return (
+    <Sheet open={open} onClose={() => {}} title="Privacy notice"
+      footer={<Button block size="lg" loading={busy} onClick={accept}>I agree</Button>}>
+      <p className="pb-2 text-muted">
+        YES uses your name, contact details and program activity only to run the canvassing program. Your leader and the
+        program administrators can see it. You can download, correct or ask to erase your data at any time.{" "}
+        <Link href="/privacy" className="font-semibold text-fg underline">Read the full notice</Link>.
+      </p>
+    </Sheet>
   );
 }

@@ -25,6 +25,7 @@ export default function SignUpPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [needsConfirm, setNeedsConfirm] = useState(false);
+  const [accepted, setAccepted] = useState(false);
 
   async function verify(e: React.FormEvent) {
     e.preventDefault();
@@ -47,13 +48,14 @@ export default function SignUpPage() {
     if (form.full_name.trim().length < 2) return setError("Please enter your full name.");
     if (!/^\S+@\S+\.\S+$/.test(form.email.trim())) return setError("Please enter a valid email.");
     if (form.password.length < 8) return setError("Password must be at least 8 characters.");
+    if (!accepted) return setError("Please read and accept the privacy notice.");
     setBusy(true);
     try {
       const { data, error: authError } = await sb().auth.signUp({
         email: form.email.trim(),
         password: form.password,
         options: {
-          data: { full_name: form.full_name.trim(), phone: form.phone.trim(), access_code: code.trim().toUpperCase() },
+          data: { full_name: form.full_name.trim(), phone: form.phone.trim(), access_code: code.trim().toUpperCase(), privacy_accepted: "true" },
           emailRedirectTo: `${location.origin}/sign-in`,
         },
       });
@@ -111,8 +113,17 @@ export default function SignUpPage() {
             value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
           <Field label="Password" type="password" autoComplete="new-password" hint="At least 8 characters"
             value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
+          <p className="px-1 text-xs text-muted">
+            Name, email and password are required to create your account; phone is optional. Your data is used only to run the
+            YES program and is visible to you, your leader and the program administrators. You can download, correct or ask to
+            erase it at any time.
+          </p>
+          <label className="flex items-start gap-3 rounded-2xl bg-elevated p-4 shadow-card">
+            <input type="checkbox" checked={accepted} onChange={(e) => setAccepted(e.target.checked)} className="mt-0.5 size-5 accent-[var(--navy-900)]" />
+            <span className="text-sm">I have read the <Link href="/privacy" target="_blank" className="font-semibold underline">Privacy Notice</Link> and agree that YES processes my data for the canvassing program.</span>
+          </label>
           {error && <Notice tone="danger">{error}</Notice>}
-          <Button type="submit" size="lg" block loading={busy}>Create Account</Button>
+          <Button type="submit" size="lg" block loading={busy} disabled={!accepted}>Create Account</Button>
           <button type="button" onClick={() => { setVerified(false); setError(null); }}
             className="pressable block w-full py-2 text-center text-sm font-medium text-muted">Use a different code</button>
         </form>

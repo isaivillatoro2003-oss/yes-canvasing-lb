@@ -28,6 +28,9 @@ export default function AdminSettings() {
     access_code_prefix: settings.access_code_prefix,
     access_code_default_days: String(settings.access_code_default_days),
     campaign_start_date: settings.campaign_start_date ?? "",
+    data_controller: settings.data_controller,
+    privacy_contact: settings.privacy_contact ?? "",
+    retention_years: String(settings.retention_years),
   });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -51,13 +54,17 @@ export default function AdminSettings() {
     }
     if (!Number.isFinite(days) || days < 1) return setError("Default code validity must be at least 1 day.");
     if (!form.access_code_prefix.trim()) return setError("Enter an access code prefix.");
+    const years = parseInt(form.retention_years, 10);
+    if (!Number.isFinite(years) || years < 1 || years > 20) return setError("Data retention must be between 1 and 20 years.");
+    if (!form.data_controller.trim()) return setError("Enter who is responsible for the data (data controller).");
     setBusy(true);
     try {
       const { error: err } = await sb().from("app_settings").update({
         org_name: form.org_name.trim(), currency, timezone: form.timezone.trim(), default_language: form.default_language,
         allow_multiple_sessions: form.allow_multiple_sessions, collect_contacts: form.collect_contacts, donations_enabled: form.donations_enabled,
         payment_methods: form.payment_methods, access_code_prefix: form.access_code_prefix.trim().toUpperCase(),
-        access_code_default_days: days, campaign_start_date: form.campaign_start_date || null, updated_at: new Date().toISOString(),
+        access_code_default_days: days, campaign_start_date: form.campaign_start_date || null,
+        data_controller: form.data_controller.trim(), privacy_contact: form.privacy_contact.trim() || null, retention_years: years, updated_at: new Date().toISOString(),
       }).eq("id", 1);
       if (err) throw toAppError(err);
       await refreshSettings();
@@ -121,6 +128,16 @@ export default function AdminSettings() {
                 onChange={(e) => setForm({ ...form, access_code_default_days: e.target.value.replace(/\D/g, "") })} />
             </div>
             <Field label="Campaign start date" type="date" value={form.campaign_start_date} onChange={(e) => setForm({ ...form, campaign_start_date: e.target.value })} />
+            <div className="space-y-3 rounded-2xl bg-sunken p-4">
+              <p className="text-sm font-semibold">Privacy (Lebanon Law 81/2018)</p>
+              <Field label="Data controller (organisation responsible)" value={form.data_controller} maxLength={120}
+                onChange={(e) => setForm({ ...form, data_controller: e.target.value })} />
+              <Field label="Privacy contact (email or phone)" value={form.privacy_contact} maxLength={120}
+                hint="Shown in the privacy notice so people can ask for a copy, correction or erasure of their data."
+                onChange={(e) => setForm({ ...form, privacy_contact: e.target.value })} />
+              <Field label="Keep records for (years)" inputMode="numeric" value={form.retention_years}
+                onChange={(e) => setForm({ ...form, retention_years: e.target.value.replace(/\D/g, "") })} />
+            </div>
             <Button block size="lg" loading={busy} onClick={save}>Save settings</Button>
           </Card>
         </Section>

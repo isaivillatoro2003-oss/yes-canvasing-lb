@@ -1,13 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { CalendarPlus, MessageCircle, Phone, UserPlus, Users } from "lucide-react";
+import { CalendarPlus, Eraser, MessageCircle, Phone, UserPlus, Users } from "lucide-react";
 import { useApp } from "@/lib/app-context";
 import { useData } from "@/lib/hooks";
-import { sb, toAppError } from "@/lib/supabase";
+import { rpc, sb, toAppError } from "@/lib/supabase";
 import { dateLabel, shiftDate, todayIn } from "@/lib/format";
 import type { Customer } from "@/lib/types";
-import { Badge, Button, Card, EmptyState, Field, PageLoader, Select, Sheet, TextArea, Toggle } from "@/components/ui";
+import { Badge, Button, Card, EmptyState, Field, PageLoader, Select, Sheet, TextArea, Toggle, useConfirm } from "@/components/ui";
 import { PageHeader } from "@/components/app/shell";
 
 const EMPTY = { name: "", phone: "", whatsapp: "", email: "", city: "", neighborhood: "", notes: "", consent: false };
@@ -26,6 +26,21 @@ export default function Customers() {
   const [follow, setFollow] = useState<Customer | null>(null);
   const [fu, setFu] = useState({ type: "Visit", due: shiftDate(todayIn(settings.timezone), 3), notes: "" });
   const [busy, setBusy] = useState(false);
+  const confirm = useConfirm();
+  const isAdmin = profile?.role === "admin";
+
+  async function erase(c: Customer) {
+    const ok = await confirm.ask(`Erase ${c.name ?? "this person"}'s personal data?`, {
+      body: "Name, phone, WhatsApp, email and notes are removed for good (Law 81/2018, Art. 101). Sales totals stay. This is recorded in the audit log.",
+      confirm: "Erase", tone: "danger",
+    });
+    if (!ok) return;
+    try {
+      await rpc("admin_erase_customer", { p_id: c.id, p_reason: `Erasure request handled ${new Date().toISOString().slice(0, 10)}` });
+      toast("Personal data erased", "success");
+      customers.refresh();
+    } catch (e) { toast(toAppError(e).message, "error"); }
+  }
 
   const list = (customers.data ?? []).filter((c) => {
     const q = query.trim().toLowerCase();
@@ -76,6 +91,10 @@ export default function Customers() {
                 {c.phone && <a href={`tel:${c.phone}`} aria-label="Call" className="pressable grid size-10 place-items-center rounded-xl bg-sunken"><Phone className="size-4" /></a>}
                 {c.whatsapp && <a href={`https://wa.me/${c.whatsapp.replace(/\D/g, "")}`} target="_blank" rel="noreferrer" aria-label="WhatsApp"
                   className="pressable grid size-10 place-items-center rounded-xl bg-sunken"><MessageCircle className="size-4" /></a>}
+                {isAdmin && c.name !== "[erased]" && (
+                  <button type="button" aria-label="Erase personal data" onClick={() => erase(c)}
+                    className="pressable grid size-10 place-items-center rounded-xl bg-sunken text-danger"><Eraser className="size-4" /></button>
+                )}
                 <button type="button" aria-label="Schedule follow-up" onClick={() => setFollow(c)}
                   className="pressable grid size-10 place-items-center rounded-xl bg-sunken"><CalendarPlus className="size-4" /></button>
               </div>
@@ -101,6 +120,7 @@ export default function Customers() {
             <Field label="Neighborhood" value={form.neighborhood} onChange={(e) => setForm({ ...form, neighborhood: e.target.value })} />
           </div>
           <TextArea label="Notes" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
+          <p className="px-1 text-xs text-muted">Tell the person this is optional and only used by YES to follow up. Never write health information.</p>
         </div>
       </Sheet>
 
@@ -114,6 +134,7 @@ export default function Customers() {
           <TextArea label="Notes" value={fu.notes} onChange={(e) => setFu({ ...fu, notes: e.target.value })} />
         </div>
       </Sheet>
+      {confirm.node}
     </>
   );
 }

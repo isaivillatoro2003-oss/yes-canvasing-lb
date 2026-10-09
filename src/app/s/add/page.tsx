@@ -304,6 +304,10 @@ export default function NewTransaction() {
                   <Field label="Email" type="email" inputMode="email" autoCapitalize="none" value={customer.email} onChange={(e) => setCustomer({ ...customer, email: e.target.value })} />
                 </fieldset>
                 <TextArea label="Notes" value={customer.notes} onChange={(e) => setCustomer({ ...customer, notes: e.target.value })} />
+                <p className="px-1 text-xs text-muted">
+                  Tell the person: this is optional, it is only used by YES to follow up, and they can ask to have it removed.
+                  Never write health information (illnesses, conditions) in notes.
+                </p>
               </Card>
             )}
           </Section>

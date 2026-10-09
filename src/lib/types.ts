@@ -12,6 +12,7 @@ export type Profile = {
   preferred_language: Lang | null;
   created_at: string;
   last_login: string | null;
+  privacy_accepted_at: string | null;
 };
 
 export type Lang = "en" | "fr" | "ar";
@@ -29,6 +30,9 @@ export type Settings = {
   access_code_prefix: string;
   access_code_default_days: number;
   campaign_start_date: string | null;
+  data_controller: string;
+  privacy_contact: string | null;
+  retention_years: number;
 };
 
 export type Book = {

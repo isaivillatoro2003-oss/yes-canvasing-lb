@@ -38,6 +38,9 @@ const DEFAULT_SETTINGS: Settings = {
   access_code_prefix: "YES",
   access_code_default_days: 30,
   campaign_start_date: null,
+  data_controller: "YES — Youth Education Scholarship",
+  privacy_contact: null,
+  retention_years: 5,
 };
 
 const AppCtx = createContext<Ctx | null>(null);

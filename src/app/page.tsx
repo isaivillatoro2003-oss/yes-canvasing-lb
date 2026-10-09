@@ -48,7 +48,7 @@ export default function Welcome() {
         <div className="enter space-y-3 pb-8 pt-10" style={{ animationDelay: "80ms" }}>
           <LinkButton href="/sign-in" size="lg" block className="!bg-[var(--cream-100)] !text-[var(--navy-900)]">{t("auth.signIn")}</LinkButton>
           <LinkButton href="/sign-up" size="lg" block variant="ghost" className="ring-1 ring-white/20 !text-[var(--cream-100)]">{t("auth.createAccount")}</LinkButton>
-          <p className="pt-2 text-center text-xs text-[var(--cream-200)]/50">You need an access code from your YES leader to create an account.</p>
+          <p className="pt-2 text-center text-xs text-[var(--cream-200)]/50">You need an access code from your YES leader to create an account. · <a href="/privacy" className="underline">Privacy</a></p>
         </div>
       </div>
     </main>

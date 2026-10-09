@@ -163,6 +163,38 @@ describe("a brand-new person who signs up gets the simple (student) view only", 
   });
 });
 
+describe("Lebanon Law 81/2018 — privacy", () => {
+  it("sign-up without accepting the privacy notice is refused; acceptance is recorded", async () => {
+    const c = await newCode();
+    await expectError(signUp(db, "test.noconsent@example.com", { access_code: c.code, privacy_accepted: "false" }), /privacy notice/);
+    assert.equal(await call(db, null, "check_access_code", { p_code: c.code }), "valid"); // code not consumed
+    const u = await signUp(db, "test.consent@example.com", { access_code: c.code });
+    const [p] = await as<{ privacy_accepted_at: string | null }>(db, u, "select privacy_accepted_at from profiles where id = auth.uid()");
+    assert.ok(p.privacy_accepted_at);
+  });
+
+  it("a person can download a copy of their own data (Art. 99)", async () => {
+    const d = await call<{ profile: { id: string }; transactions: unknown[]; inventory: unknown[] }>(db, s1, "export_my_data");
+    assert.equal(d.profile.id, s1);
+    assert.ok(d.transactions.length >= 1);
+  });
+
+  it("admin can erase a customer's personal data; sales stay intact (Art. 101)", async () => {
+    const [c] = await as<{ id: string }>(db, admin, "select id from customers limit 1");
+    await expectError(call(db, s1, "admin_erase_customer", { p_id: c.id, p_reason: "x" }), /Only an admin/);
+    await call(db, admin, "admin_erase_customer", { p_id: c.id, p_reason: "TEST request by phone" });
+    const [after] = (await db.query<{ name: string; phone: string | null }>("select name, phone from customers where id = $1", [c.id])).rows;
+    assert.equal(after.name, "[erased]");
+    assert.equal(after.phone, null);
+    const n = await as<{ n: string }>(db, admin, "select count(*) n from transactions where customer_id = $1", [c.id]);
+    assert.equal(Number(n[0].n), 1);
+  });
+
+  it("oversized input is rejected by the database", async () => {
+    await expectError(as(db, s1, "insert into customers (created_by, name) values (auth.uid(), repeat('x', 5000))"), /customers_len/);
+  });
+});
+
 describe("§50 error cases", () => {
   it("wrong access code", async () => {
     assert.equal(await call(db, null, "check_access_code", { p_code: "YES-NOPE00" }), "invalid");

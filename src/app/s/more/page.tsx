@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { CalendarCheck, Clock, CloudUpload, Globe, LayoutDashboard, LogOut, UserRound, Users } from "lucide-react";
+import { CalendarCheck, Clock, CloudUpload, Download, Globe, LayoutDashboard, LogOut, ShieldCheck, UserRound, Users } from "lucide-react";
 import { homeFor, useApp } from "@/lib/app-context";
 import { rpc, toAppError } from "@/lib/supabase";
 import { initials } from "@/lib/format";
@@ -58,6 +58,23 @@ export default function More() {
             <ListRow href="/s/more/follow-ups" icon={<CalendarCheck className="size-[18px]" />} title="Follow-ups" />
             <ListRow href="/s/more/sessions" icon={<Clock className="size-[18px]" />} title="Work sessions" />
             <ListRow href="/s/more/pending" icon={<CloudUpload className="size-[18px]" />} title="Sync status" subtitle="Transactions saved on this phone" />
+          </ListGroup>
+        </Section>
+
+        <Section title="Privacy">
+          <ListGroup>
+            <ListRow onClick={async () => {
+              try {
+                const data = await rpc<unknown>("export_my_data");
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+                const a = document.createElement("a");
+                a.href = URL.createObjectURL(blob);
+                a.download = `yes-my-data-${new Date().toISOString().slice(0, 10)}.json`;
+                a.click();
+                URL.revokeObjectURL(a.href);
+              } catch (e) { toast(toAppError(e).message, "error"); }
+            }} icon={<Download className="size-[18px]" />} title="Download my data" subtitle="A copy of everything YES stores about you" />
+            <ListRow href="/privacy" icon={<ShieldCheck className="size-[18px]" />} title="Privacy notice" />
           </ListGroup>
         </Section>
 

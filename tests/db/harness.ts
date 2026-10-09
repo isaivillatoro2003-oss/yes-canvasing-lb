@@ -71,7 +71,8 @@ export async function call<T = unknown>(db: Db, uid: string | null, fn: string, 
 export async function signUp(db: Db, email: string, meta: Record<string, unknown>, appMeta: Record<string, unknown> = {}): Promise<string> {
   const r = await db.query<{ id: string }>(
     `insert into auth.users (email, raw_user_meta_data, raw_app_meta_data) values ($1, $2, $3) returning id`,
-    [email, JSON.stringify(meta), JSON.stringify(appMeta)],
+    // Real sign-ups from the app always send privacy_accepted; tests opt out explicitly.
+    [email, JSON.stringify({ privacy_accepted: "true", ...meta }), JSON.stringify(appMeta)],
   );
   return r.rows[0]!.id;
 }
