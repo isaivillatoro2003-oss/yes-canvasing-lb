@@ -163,6 +163,75 @@ describe("a brand-new person who signs up gets the simple (student) view only", 
   });
 });
 
+describe("work location and pauses", () => {
+  const HAMRA = { lat: 33.8966, lng: 35.4823, accuracy: 12, city: "Beirut", neighborhood: "Hamra", status: "ok" };
+  let w: string;
+
+  it("start/pause/resume/stop are stamped with time and place; paused time is not work time", async () => {
+    w = await signUp(db, "test.walker@example.com", { full_name: "TEST Walker", access_code: (await newCode({ p_team: team1 })).code });
+    const s = await call<{ id: string }>(db, w, "start_work", { p_loc: HAMRA });
+    const [ev] = await as<{ event_type: string; city: string; latitude: string; location_status: string }>(
+      db, w, "select event_type, city, latitude, location_status from work_session_events where session_id = $1", [s.id]);
+    assert.deepEqual([ev.event_type, ev.city, Number(ev.latitude), ev.location_status], ["start", "Beirut", 33.8966, "ok"]);
+
+    // pretend the session started 90 minutes ago, then pause
+    await db.query("update work_sessions set started_at = now() - interval '90 minutes' where id = $1", [s.id]);
+    await call(db, w, "pause_work", { p_loc: { status: "denied" } });
+    await expectError(call(db, w, "start_work", { p_loc: HAMRA }), /already have an active work session/);
+    await expectError(call(db, w, "create_transaction", { p: { items: [], donation: { amount: 5 }, payments: [] } }), /paused/);
+    // the pause lasted 30 minutes
+    await db.query("update work_sessions set paused_at = now() - interval '30 minutes' where id = $1", [s.id]);
+    await call(db, w, "resume_work", { p_loc: HAMRA });
+    const stopped = await call<{ duration_minutes: number; paused_minutes: number }>(db, w, "stop_work", { p_loc: HAMRA });
+    assert.equal(stopped.paused_minutes, 30);
+    assert.equal(stopped.duration_minutes, 60);
+    const types = (await as<{ event_type: string; location_status: string }>(db, w,
+      "select event_type, location_status from work_session_events where session_id = $1 order by occurred_at, created_at", [s.id]));
+    assert.deepEqual(types.map((t) => t.event_type), ["start", "pause", "resume", "stop"]);
+    assert.equal(types[1].location_status, "denied");
+  });
+
+  it("pings are recorded only while working, at most every 4 minutes", async () => {
+    const s = await call<{ id: string }>(db, w, "start_work", { p_loc: HAMRA });
+    await call(db, w, "log_location", { p_loc: HAMRA });
+    await call(db, w, "log_location", { p_loc: HAMRA });
+    const pings = () => as(db, w, "select 1 from work_session_events where session_id = $1 and event_type = 'ping'", [s.id]);
+    assert.equal((await pings()).length, 1);
+    await call(db, w, "pause_work", {});
+    await db.query("update work_session_events set occurred_at = now() - interval '10 minutes' where session_id = $1", [s.id]);
+    await call(db, w, "log_location", { p_loc: HAMRA });
+    assert.equal((await pings()).length, 1); // paused: nothing recorded
+    await call(db, w, "resume_work", {});
+  });
+
+  it("the leader sees where and when; other leaders and students don't", async () => {
+    const live = await as<{ full_name: string; start_place: string; last_place: string }>(db, leader, "select * from active_sessions() where user_id = $1", [w]);
+    assert.equal(live.length, 1);
+    assert.equal(live[0].start_place, "Hamra, Beirut");
+    assert.equal((await as(db, leader, "select 1 from work_session_events where user_id = $1", [w])).length > 0, true);
+    assert.equal((await as(db, leader2, "select 1 from work_session_events where user_id = $1", [w])).length, 0);
+    assert.equal((await as(db, s2, "select 1 from work_session_events where user_id = $1", [w])).length, 0);
+    await expectError(as(db, w, "insert into work_session_events (session_id, user_id, event_type) select id, user_id, 'ping' from work_sessions where user_id = auth.uid() limit 1"),
+      /permission denied/);
+  });
+
+  it("a transaction carries its location", async () => {
+    await call(db, w, "create_transaction", { p: { items: [], donation: { amount: 5 }, payments: [{ amount: 5, method: "cash" }], location: HAMRA } });
+    const t = await as(db, w, "select 1 from work_session_events where user_id = auth.uid() and event_type = 'transaction' and city = 'Beirut'");
+    assert.equal(t.length, 1);
+    await call(db, w, "stop_work", {});
+  });
+
+  it("admin can require location to start work", async () => {
+    await db.query("update app_settings set location_required = true");
+    await expectError(call(db, w, "start_work", { p_loc: { status: "denied" } }), /Turn on location/);
+    const s = await call<{ id: string }>(db, w, "start_work", { p_loc: HAMRA });
+    assert.ok(s.id);
+    await call(db, w, "stop_work", {});
+    await db.query("update app_settings set location_required = false");
+  });
+});
+
 describe("Lebanon Law 81/2018 — privacy", () => {
   it("sign-up without accepting the privacy notice is refused; acceptance is recorded", async () => {
     const c = await newCode();
