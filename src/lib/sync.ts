@@ -29,6 +29,7 @@ export type TxPayload = {
   city?: string | null;
   neighborhood?: string | null;
   notes?: string | null;
+  location?: { status: string; lat?: number; lng?: number; accuracy?: number; city?: string; neighborhood?: string };
 };
 
 export type QueuedTx = {

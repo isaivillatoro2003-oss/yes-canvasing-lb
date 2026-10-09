@@ -15,7 +15,7 @@ const csp = [
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https:",
   "font-src 'self' data:",
-  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://vercel.live wss://ws-us3.pusher.com",
+  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://nominatim.openstreetmap.org https://vercel.live wss://ws-us3.pusher.com",
   "frame-src https://vercel.live",
   "worker-src 'self'",
   "manifest-src 'self'",

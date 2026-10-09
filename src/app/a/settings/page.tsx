@@ -31,6 +31,7 @@ export default function AdminSettings() {
     data_controller: settings.data_controller,
     privacy_contact: settings.privacy_contact ?? "",
     retention_years: String(settings.retention_years),
+    location_required: settings.location_required,
   });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -64,7 +65,7 @@ export default function AdminSettings() {
         allow_multiple_sessions: form.allow_multiple_sessions, collect_contacts: form.collect_contacts, donations_enabled: form.donations_enabled,
         payment_methods: form.payment_methods, access_code_prefix: form.access_code_prefix.trim().toUpperCase(),
         access_code_default_days: days, campaign_start_date: form.campaign_start_date || null,
-        data_controller: form.data_controller.trim(), privacy_contact: form.privacy_contact.trim() || null, retention_years: years, updated_at: new Date().toISOString(),
+        data_controller: form.data_controller.trim(), privacy_contact: form.privacy_contact.trim() || null, retention_years: years, location_required: form.location_required, updated_at: new Date().toISOString(),
       }).eq("id", 1);
       if (err) throw toAppError(err);
       await refreshSettings();
@@ -130,6 +131,10 @@ export default function AdminSettings() {
             <Field label="Campaign start date" type="date" value={form.campaign_start_date} onChange={(e) => setForm({ ...form, campaign_start_date: e.target.value })} />
             <div className="space-y-3 rounded-2xl bg-sunken p-4">
               <p className="text-sm font-semibold">Privacy (Lebanon Law 81/2018)</p>
+              <div className="overflow-hidden rounded-2xl bg-elevated">
+                <Toggle checked={form.location_required} onChange={(v) => setForm({ ...form, location_required: v })}
+                  label="Require location to start work" description="If off, students can still start without sharing it; leaders see “location not shared”." />
+              </div>
               <Field label="Data controller (organisation responsible)" value={form.data_controller} maxLength={120}
                 onChange={(e) => setForm({ ...form, data_controller: e.target.value })} />
               <Field label="Privacy contact (email or phone)" value={form.privacy_contact} maxLength={120}

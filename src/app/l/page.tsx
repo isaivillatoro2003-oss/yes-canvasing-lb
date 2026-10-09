@@ -6,9 +6,10 @@ import { useApp } from "@/lib/app-context";
 import { useData, useNow } from "@/lib/hooks";
 import { getReport } from "@/lib/queries";
 import { getActiveSessions, getPendingDays } from "@/lib/leader";
-import { elapsedLabel, initials, minutesToLabel, money, timeLabel, todayIn } from "@/lib/format";
+import { elapsedLabel, initials, minutesToLabel, money, todayIn } from "@/lib/format";
 import { Card, EmptyState, ListGroup, ListRow, Notice, Section, Stat } from "@/components/ui";
 import { PageHeader } from "@/components/app/shell";
+import { LiveWhere } from "@/components/app/live-where";
 
 export default function LeaderDashboard() {
   const { profile, settings } = useApp();
@@ -55,13 +56,16 @@ export default function LeaderDashboard() {
                   className="pressable flex items-center gap-3 rounded-3xl bg-elevated p-4 shadow-card">
                   <span className="relative grid size-11 place-items-center rounded-2xl bg-sunken font-bold">
                     {initials(s.full_name)}
-                    <span className="live-dot absolute -end-0.5 -top-0.5 size-3 rounded-full bg-success ring-2 ring-[var(--bg-elevated)]" />
+                    <span className={`absolute -end-0.5 -top-0.5 size-3 rounded-full ring-2 ring-[var(--bg-elevated)] ${s.status === "paused" ? "bg-warning" : "live-dot bg-success"}`} />
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate font-semibold">{s.full_name}</span>
-                    <span className="block text-sm text-muted">Since {timeLabel(s.started_at, settings.timezone)} · {s.presentations} presentations</span>
+                    <LiveWhere s={s} now={now} tz={settings.timezone} />
                   </span>
-                  <span className="text-lg font-bold text-numeric">{elapsedLabel(s.started_at, now)}</span>
+                  <span className="text-end">
+                    <span className="block text-lg font-bold text-numeric">{s.status === "paused" ? "Paused" : elapsedLabel(s.started_at, now)}</span>
+                    <span className="block text-xs text-subtle">{s.presentations} pres.</span>
+                  </span>
                 </Link>
               ))}
             </div>

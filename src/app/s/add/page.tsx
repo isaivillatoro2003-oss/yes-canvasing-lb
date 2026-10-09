@@ -1,9 +1,9 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, useReducedMotion } from "motion/react";
-import { BookPlus, Check, ChevronDown, CloudUpload, HandHeart, Plus, Search, Trash2, UserRound, Wallet } from "lucide-react";
+import { BookPlus, LocateFixed, Check, ChevronDown, CloudUpload, HandHeart, Plus, Search, Trash2, UserRound, Wallet } from "lucide-react";
 import { useApp } from "@/lib/app-context";
 import { useData } from "@/lib/hooks";
 import { getActiveSession, getInventory } from "@/lib/queries";
@@ -11,6 +11,7 @@ import { sb } from "@/lib/supabase";
 import { submitTransaction, type TxPayload } from "@/lib/sync";
 import { balanceOf, cn, methodLabel, money } from "@/lib/format";
 import { uuid } from "@/lib/uuid";
+import { currentLocation, placeLabel, type Loc } from "@/lib/location";
 import type { InventoryRow, Territory, TxSummary } from "@/lib/types";
 import {
   Badge, Button, Card, EmptyState, Field, LinkButton, MoneyInput, Notice, Section, Segmented, Sheet, Stepper, TextArea, Toggle,
@@ -47,6 +48,26 @@ export default function NewTransaction() {
   const [pays, setPays] = useState<Pay[]>([{ key: "p1", method: settings.payment_methods[0] ?? "cash", amount: "", reference: "" }]);
   const [amountTouched, setAmountTouched] = useState(false);
   const [place, setPlace] = useState(readPlace);
+  const [loc, setLoc] = useState<Loc | null>(null);
+  const [locating, setLocating] = useState(true);
+
+  // City and neighborhood come from the phone's location; the student can still correct them.
+  function applyLocation(l: Loc) {
+    setLoc(l);
+    if (l.status === "ok" && (l.city || l.neighborhood)) {
+      setPlace((p) => ({ ...p, city: l.city ?? p.city, neighborhood: l.neighborhood ?? p.neighborhood }));
+    }
+    setLocating(false);
+  }
+  async function detect() {
+    setLocating(true);
+    applyLocation(await currentLocation());
+  }
+  useEffect(() => {
+    let alive = true;
+    currentLocation().then((l) => { if (alive) applyLocation(l); });
+    return () => { alive = false; };
+  }, []);
   const [showCustomer, setShowCustomer] = useState(false);
   const [customer, setCustomer] = useState({ name: "", phone: "", whatsapp: "", email: "", notes: "", consent: false });
   const [notes, setNotes] = useState("");
@@ -99,6 +120,7 @@ export default function NewTransaction() {
       city: place.city || null,
       neighborhood: place.neighborhood || null,
       notes: notes || null,
+      location: loc ?? { status: "unavailable" },
     };
     try { localStorage.setItem(LAST_PLACE, JSON.stringify(place)); } catch { /* ignore */ }
     const label = `${bookCount} book${bookCount === 1 ? "" : "s"} · ${money(expected, settings.currency)}`;
@@ -174,6 +196,21 @@ export default function NewTransaction() {
   }
 
   /* ───────── No active session ───────── */
+  if (active?.status === "paused") {
+    return (
+      <>
+        <PageHeader title="New Transaction" />
+        <div className="px-5">
+          <Card>
+            <EmptyState icon={<Wallet className="size-6" />} title="Your work is paused"
+              body="Resume work from Home to record transactions."
+              action={<LinkButton href="/s" size="lg">Go to Home</LinkButton>} />
+          </Card>
+        </div>
+      </>
+    );
+  }
+
   if (!session.loading && !active) {
     return (
       <>
@@ -261,7 +298,17 @@ export default function NewTransaction() {
         </Section>
 
         {/* 4 — Where */}
-        <Section title="Where">
+        <Section title="Where" action={
+          <button type="button" onClick={detect} disabled={locating} className="pressable inline-flex items-center gap-1 text-sm font-semibold disabled:opacity-50">
+            <LocateFixed className={locating ? "size-4 animate-pulse" : "size-4"} /> {locating ? "Locating…" : "Detect"}
+          </button>}>
+          {loc && (
+            <p className="px-1 text-xs text-muted">
+              {loc.status === "ok" ? `Detected: ${placeLabel(loc) || "location recorded"}${loc.accuracy ? ` (±${loc.accuracy} m)` : ""} · © OpenStreetMap`
+                : loc.status === "denied" ? "Location is blocked on this phone. Allow it in the browser settings, or type the place."
+                : "Couldn't get the location. Type the place below."}
+            </p>
+          )}
           <Card className="space-y-3 p-4">
             {(territories.data?.length ?? 0) > 0 && (
               <label className="block">

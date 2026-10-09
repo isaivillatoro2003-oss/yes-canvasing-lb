@@ -51,6 +51,7 @@ export default function Privacy() {
             <li><b>Participants (mandatory):</b> full name, email, password (stored only as a secure hash by our authentication provider) and the access code. Without them an account cannot be created.</li>
             <li><b>Participants (optional):</b> phone number.</li>
             <li><b>Activity (created by using the app):</b> work start/stop times, presentations count, books assigned and distributed, transactions, donations, payments and reconciliations.</li>
+            <li><b>Location during work:</b> the phone&apos;s position (and the city/neighborhood it corresponds to) when a student starts, pauses, resumes or stops work, with each sale, and about every 10 minutes while the app is open during a work session. It is used to verify field hours and organise territories. It is <b>never</b> collected outside a work session, and the student can see when it is recorded. Place names come from OpenStreetMap.</li>
             <li><b>People visited (optional):</b> name, city/neighborhood and notes. Phone, WhatsApp and email are stored <b>only</b> if the person explicitly agreed to be contacted; otherwise the app discards them.</li>
           </ul>
           <p className="mt-2">We do not collect health, genetic or sexual-life information. Please do <b>not</b> write such details in any notes field.</p>

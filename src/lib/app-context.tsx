@@ -41,6 +41,7 @@ const DEFAULT_SETTINGS: Settings = {
   data_controller: "YES — Youth Education Scholarship",
   privacy_contact: null,
   retention_years: 5,
+  location_required: false,
 };
 
 const AppCtx = createContext<Ctx | null>(null);

@@ -14,7 +14,7 @@ import { Badge, Button, Card, EmptyState, LinkButton, PageLoader, Section, Segme
 import { PageHeader } from "@/components/app/shell";
 import { RangePicker, ReportBody, type Range } from "@/components/app/report-view";
 import { ReconBadge } from "@/components/app/recon-badge";
-import { SessionList } from "@/components/app/session-list";
+import { SessionTimeline } from "@/components/app/session-timeline";
 
 type Tab = "overview" | "inventory" | "transactions" | "sessions" | "customers" | "days";
 
@@ -36,7 +36,7 @@ function StudentView() {
   const student = useData(id ? `profile:${id}` : null, () =>
     select<Profile | null>(sb().from("profiles").select("*").eq("id", id).maybeSingle()), [id]);
   const session = useData(id ? `session:${id}` : null, () =>
-    select<WorkSession | null>(sb().from("work_sessions").select("*").eq("user_id", id).eq("status", "active").limit(1).maybeSingle()), [id]);
+    select<WorkSession | null>(sb().from("work_sessions").select("*").eq("user_id", id).in("status", ["active", "paused"]).limit(1).maybeSingle()), [id]);
   const report = useData(id ? `report:${id}:${range.from}:${range.to}` : null, () => getReport({ ...range, user: id }), [id, range.from, range.to]);
   const inventory = useData(tab === "inventory" ? `inventory:${id}` : null, () => getInventory(id), [id, tab]);
   const txs = useData(tab === "transactions" ? `tx:${id}:${range.from}:${range.to}` : null, () => {
@@ -45,8 +45,6 @@ function StudentView() {
     if (range.to) q = q.lte("work_date", range.to);
     return select<Transaction[]>(q);
   }, [id, tab, range.from, range.to]);
-  const sessions = useData(tab === "sessions" ? `sessions:${id}` : null, () =>
-    select<WorkSession[]>(sb().from("work_sessions").select("*").eq("user_id", id).order("started_at", { ascending: false }).limit(60)), [id, tab]);
   const customers = useData(tab === "customers" ? `customers:${id}` : null, () =>
     select<Customer[]>(sb().from("customers").select("*").eq("created_by", id).order("created_at", { ascending: false }).limit(200)), [id, tab]);
   const days = useData(tab === "days" ? `recons:${id}` : null, () =>
@@ -134,7 +132,7 @@ function StudentView() {
           </Card>
         ))}
 
-        {tab === "sessions" && (!sessions.data ? <PageLoader /> : <SessionList sessions={sessions.data} tz={settings.timezone} />)}
+        {tab === "sessions" && <SessionTimeline userId={id} />}
 
         {tab === "customers" && (!customers.data ? <PageLoader /> : customers.data.length === 0 ? <Card><EmptyState title="No customers saved" /></Card> : (
           <Card className="divide-y divide-line">

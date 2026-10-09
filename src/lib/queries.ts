@@ -11,7 +11,7 @@ async function q<T>(p: PromiseLike<{ data: unknown; error: unknown }>): Promise<
 
 export const getActiveSession = (uid: string) =>
   q<WorkSession | null>(
-    sb().from("work_sessions").select("*").eq("user_id", uid).eq("status", "active")
+    sb().from("work_sessions").select("*").eq("user_id", uid).in("status", ["active", "paused"])
       .order("started_at", { ascending: false }).limit(1).maybeSingle(),
   );
 

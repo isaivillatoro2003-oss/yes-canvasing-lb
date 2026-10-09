@@ -33,6 +33,7 @@ export type Settings = {
   data_controller: string;
   privacy_contact: string | null;
   retention_years: number;
+  location_required: boolean;
 };
 
 export type Book = {
@@ -66,8 +67,10 @@ export type WorkSession = {
   started_at: string;
   last_heartbeat: string | null;
   ended_at: string | null;
-  status: "active" | "completed" | "auto_closed";
+  status: "active" | "paused" | "completed" | "auto_closed";
   duration_minutes: number | null;
+  paused_at: string | null;
+  paused_minutes: number;
   presentations: number;
   notes: string | null;
 };

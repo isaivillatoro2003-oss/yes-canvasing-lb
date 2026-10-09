@@ -13,6 +13,7 @@ import { cn } from "@/lib/format";
 import type { Role } from "@/lib/types";
 import type { TKey } from "@/lib/i18n";
 import { Button, PageLoader, Sheet } from "@/components/ui";
+import { LocationPinger } from "./location-pinger";
 
 export function Logo({ size = 40, className }: { size?: number; className?: string }) {
   return (
@@ -124,6 +125,7 @@ export function AppShell({ roles, children, tabRole }: { roles: Role[]; children
       <main className="pb-tabbar mx-auto max-w-lg">{children}</main>
       <TabBar role={tabRole ?? profile?.role ?? "student"} />
       <PrivacyGate />
+      <LocationPinger />
     </div>
   );
 }

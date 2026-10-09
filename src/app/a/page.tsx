@@ -6,6 +6,8 @@ import {
   BarChart3, BookOpen, Boxes, CalendarCheck, ClipboardCheck, KeyRound, MapPin, ScrollText, Settings, UsersRound, Users, Wallet,
 } from "lucide-react";
 import { useApp } from "@/lib/app-context";
+import { LiveWhere } from "@/components/app/live-where";
+import type { ActiveSession } from "@/lib/leader";
 import { useData, useNow } from "@/lib/hooks";
 import { getReport } from "@/lib/queries";
 import { rpc, sb, toAppError } from "@/lib/supabase";
@@ -18,7 +20,6 @@ type Totals = {
   students: number; leaders: number; assigned: number; distributed: number; remaining: number;
   warehouse: number; unreconciled: number; moneyDiffs: number; bookDiffs: number;
 };
-type ActiveRow = { session_id: string; user_id: string; full_name: string; team_name: string | null; started_at: string; last_heartbeat: string | null; presentations: number };
 
 const TILES = [
   { href: "/a/users", label: "Users", icon: Users },
@@ -65,7 +66,7 @@ export default function AdminDashboard() {
       bookDiffs: r.filter((x) => Number(x.book_difference) !== 0).length,
     };
   });
-  const active = useData<ActiveRow[]>("a:active", () => rpc<ActiveRow[]>("active_sessions"));
+  const active = useData<ActiveSession[]>("a:active", () => rpc<ActiveSession[]>("active_sessions"));
   const { refresh: refreshActive } = active;
   const now = useNow(1000);
 
@@ -101,12 +102,12 @@ export default function AdminDashboard() {
             <Card className="divide-y divide-line">
               {active.data.map((s) => (
                 <Link key={s.session_id} href={`/l/student?id=${s.user_id}`} className="pressable flex items-center gap-3 px-4 py-3 active:bg-sunken">
-                  <span className="live-dot size-2.5 shrink-0 rounded-full bg-success" aria-hidden />
+                  <span className={`size-2.5 shrink-0 rounded-full ${s.status === "paused" ? "bg-warning" : "live-dot bg-success"}`} aria-hidden />
                   <div className="min-w-0 flex-1">
                     <div className="truncate font-medium">{s.full_name}</div>
-                    <div className="truncate text-sm text-muted">{s.team_name ?? "No team"} · {s.presentations} presentations</div>
+                    <LiveWhere s={s} now={now} tz={settings.timezone} />
                   </div>
-                  <span className="font-semibold text-numeric">{elapsedLabel(s.started_at, now)}</span>
+                  <span className="font-semibold text-numeric">{s.status === "paused" ? "Paused" : elapsedLabel(s.started_at, now)}</span>
                 </Link>
               ))}
             </Card>

@@ -53,7 +53,7 @@ Import the GitHub repo in Vercel and add the two `NEXT_PUBLIC_*` variables. Neve
 
 ## Tests
 ```bash
-npm run test:db      # 26 database tests: the full flow (§49) and every error case (§50)
+npm run test:db      # 31 database tests: the full flow (§49) and every error case (§50)
 npm run typecheck
 npm run lint
 npm run build
