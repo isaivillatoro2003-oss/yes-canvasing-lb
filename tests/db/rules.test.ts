@@ -118,6 +118,51 @@ describe("§49 mandatory flow", () => {
   });
 });
 
+describe("a brand-new person who signs up gets the simple (student) view only", () => {
+  it("is a student, even when they try every way to become admin or leader", async () => {
+    const c = await newCode();
+    const n = await signUp(db, "test.newperson@example.com",
+      { full_name: "TEST New Person", access_code: c.code, role: "admin", is_admin: true, app_metadata: { role: "admin" } });
+    const [me] = await as<{ role: string }>(db, n, "select role from profiles where id = auth.uid()");
+    assert.equal(me.role, "student");
+
+    // Admin-only actions are refused by the database itself
+    for (const [fn, args] of [
+      ["create_access_code", {}],
+      ["admin_set_role", { p_user: n, p_role: "admin" }],
+      ["admin_set_role", { p_user: n, p_role: "leader" }],
+      ["admin_set_active", { p_user: s1, p_active: false }],
+      ["admin_assign_team", { p_user: n, p_team: team1 }],
+      ["upsert_team", { p_id: null, p_name: "hack", p_leader: n }],
+      ["warehouse_adjust", { p_book: nm, p_delta: 5 }],
+      ["student_inventory_adjust", { p_student: n, p_book: nm, p_delta: 50, p_notes: "x" }],
+      ["lock_day", { p_id: "00000000-0000-4000-8000-000000000000" }],
+    ] as const) {
+      await expectError(call(db, n, fn, args as Record<string, unknown>), /Only an admin|admin/);
+    }
+    // Leader-only actions too
+    await expectError(call(db, n, "assign_inventory", { p_student: n, p_items: [{ book_id: nm, quantity: 99 }] }), /your own students/);
+    await expectError(call(db, n, "close_day", { p_student: n, p_date: today(), p_cash: 0, p_whish: 0, p_other: 0 }), /leader or an admin/);
+
+    // Direct table writes are refused
+    await expectError(as(db, n, "update profiles set role = 'admin' where id = auth.uid()"), /permission denied/);
+    await expectError(as(db, n, "insert into access_codes (code) values ('YES-HACK01')"), /permission denied/);
+    await expectError(as(db, n, "update books set unit_value = 0"), /row-level security|permission denied|0 rows/).catch(async () => {
+      // RLS may silently match zero rows instead of erroring: prove nothing changed
+      const [b] = (await db.query<{ unit_value: string }>("select unit_value from books where id = $1", [nm])).rows;
+      assert.equal(Number(b.unit_value), 10);
+    });
+
+    // And they see only their own data
+    assert.equal((await as(db, n, "select id from profiles")).length, 1);
+    assert.equal((await as(db, n, "select id from audit_log")).length, 0);
+    assert.equal((await as(db, n, "select id from access_codes")).length, 0);
+    assert.equal((await as(db, n, "select id from transactions")).length, 0);
+    assert.equal((await as(db, n, "select * from active_sessions()")).length, 0);
+    assert.equal((await as(db, n, "select * from pending_days(100)")).length, 0);
+  });
+});
+
 describe("§50 error cases", () => {
   it("wrong access code", async () => {
     assert.equal(await call(db, null, "check_access_code", { p_code: "YES-NOPE00" }), "invalid");
