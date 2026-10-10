@@ -49,6 +49,7 @@ export default function Welcome() {
           <LinkButton href="/sign-in" size="lg" block className="!bg-[var(--cream-100)] !text-[var(--navy-900)]">{t("auth.signIn")}</LinkButton>
           <LinkButton href="/sign-up" size="lg" block variant="ghost" className="ring-1 ring-white/20 !text-[var(--cream-100)]">{t("auth.createAccount")}</LinkButton>
           <p className="pt-2 text-center text-xs text-[var(--cream-200)]/50">You need an access code from your YES leader to create an account. · <a href="/privacy" className="underline">Privacy</a></p>
+          <a href="/demo" className="pressable block pt-1 text-center text-sm font-semibold text-[var(--gold-500)]">Have a demo code? Try the demo →</a>
         </div>
       </div>
     </main>

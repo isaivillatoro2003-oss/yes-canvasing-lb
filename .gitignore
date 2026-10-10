@@ -45,3 +45,6 @@ next-env.d.ts
 
 # one-off setup SQL with personal data
 /setup/
+
+# demo runtime (copied at build)
+/public/pglite/

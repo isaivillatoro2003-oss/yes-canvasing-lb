@@ -264,6 +264,30 @@ describe("Lebanon Law 81/2018 — privacy", () => {
   });
 });
 
+describe("demo codes and admin reset", () => {
+  it("only admins create demo codes; anyone can redeem a valid one, with limits", async () => {
+    await expectError(call(db, s1, "create_demo_code", { p_label: "x" }), /Only an admin/);
+    const d = await call<{ code: string; id: string }>(db, admin, "create_demo_code", { p_label: "Pastor visit", p_days: 7, p_max_uses: 2 });
+    assert.match(d.code, /^DEMO-[A-Z2-9]{6}$/);
+    assert.equal(await call(db, null, "redeem_demo_code", { p_code: d.code.toLowerCase() }), "valid");
+    assert.equal(await call(db, null, "redeem_demo_code", { p_code: d.code }), "valid");
+    assert.equal(await call(db, null, "redeem_demo_code", { p_code: d.code }), "used");
+    assert.equal(await call(db, null, "redeem_demo_code", { p_code: "DEMO-NOPE00" }), "invalid");
+    const e = await call<{ code: string; id: string }>(db, admin, "create_demo_code", { p_days: 1 });
+    await db.query("update demo_codes set expires_at = now() - interval '1 minute' where id = $1", [e.id]);
+    assert.equal(await call(db, null, "redeem_demo_code", { p_code: e.code }), "expired");
+    await call(db, admin, "set_demo_code_active", { p_id: d.id, p_active: false });
+    assert.equal((await as(db, s1, "select 1 from demo_codes")).length, 0); // not visible to non-admins
+    // a demo code can never be used to create an account
+    await expectError(signUp(db, "test.demo@example.com", { access_code: d.code }), /Invalid access code/);
+  });
+
+  it("reset needs an admin and the word RESET", async () => {
+    await expectError(call(db, leader, "admin_reset_data", { p_confirm: "RESET" }), /Only an admin/);
+    await expectError(call(db, admin, "admin_reset_data", { p_confirm: "reset please" }), /Type RESET/);
+  });
+});
+
 describe("§50 error cases", () => {
   it("wrong access code", async () => {
     assert.equal(await call(db, null, "check_access_code", { p_code: "YES-NOPE00" }), "invalid");

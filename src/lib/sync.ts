@@ -3,6 +3,7 @@
 import { get, set } from "idb-keyval";
 import { rpc, toAppError } from "./supabase";
 import type { TxSummary } from "./types";
+import { isDemo } from "./demo/state";
 
 /**
  * Offline-safe transaction pipeline.
@@ -93,6 +94,14 @@ export type SubmitResult =
 
 /** Save now if possible; otherwise queue. Business errors are returned, not queued. */
 export async function submitTransaction(payload: TxPayload, label: string): Promise<SubmitResult> {
+  if (isDemo()) {
+    // Demo: answered by the database in this browser; never queued for the real server.
+    try {
+      return { state: "saved", summary: await rpc<TxSummary>("create_transaction", { p: payload }) };
+    } catch (e) {
+      return { state: "error", message: toAppError(e).message };
+    }
+  }
   if (typeof navigator !== "undefined" && !navigator.onLine) {
     await enqueue(payload, label);
     return { state: "queued" };
@@ -164,7 +173,7 @@ export async function flushQueue(): Promise<{ synced: number; failed: number }> 
 let started = false;
 /** Starts background retry: on reconnect, on focus, and every 20 seconds. */
 export function startSyncLoop(onSynced?: (n: number) => void) {
-  if (started || typeof window === "undefined") return;
+  if (started || typeof window === "undefined" || isDemo()) return;
   started = true;
   const run = async () => {
     const r = await flushQueue();
@@ -179,8 +188,8 @@ export function startSyncLoop(onSynced?: (n: number) => void) {
 
 /** Small key/value cache so screens can render last-known data offline. */
 export async function cacheSet(key: string, value: unknown) {
-  try { await set(`yes:cache:${key}`, value); } catch { /* storage unavailable */ }
+  try { await set(`yes:${isDemo() ? "demo-" : ""}cache:${key}`, value); } catch { /* storage unavailable */ }
 }
 export async function cacheGet<T>(key: string): Promise<T | undefined> {
-  try { return (await get(`yes:cache:${key}`)) as T | undefined; } catch { return undefined; }
+  try { return (await get(`yes:${isDemo() ? "demo-" : ""}cache:${key}`)) as T | undefined; } catch { return undefined; }
 }

@@ -11,7 +11,10 @@
     "test:db": "tsx --test tests/db/rules.test.ts",
     "db:push": "tsx scripts/db-push.mts",
     "create-admin": "tsx scripts/create-admin.mts",
-    "seed-demo": "tsx scripts/seed-demo.mts"
+    "seed-demo": "tsx scripts/seed-demo.mts",
+    "predev": "node scripts/build-demo.mjs",
+    "prebuild": "node scripts/build-demo.mjs",
+    "test:demo": "tsx --test tests/demo/demo.test.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
@@ -23,10 +26,10 @@
     "next": "16.4.0",
     "react": "19.3.0",
     "react-dom": "19.3.0",
-    "tailwind-merge": "^3.7.0"
+    "tailwind-merge": "^3.7.0",
+    "@electric-sql/pglite": "^0.5.8"
   },
   "devDependencies": {
-    "@electric-sql/pglite": "^0.5.8",
     "@tailwindcss/turbopack": "^4",
     "@types/node": "^20",
     "@types/react": "^19",

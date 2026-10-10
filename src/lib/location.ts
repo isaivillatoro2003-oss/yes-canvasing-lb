@@ -1,5 +1,7 @@
 "use client";
 
+import { isDemo } from "./demo/state";
+
 /**
  * Location for work events. The phone is asked only during a work session; the
  * result always comes back (never throws) with a status the leader can see:
@@ -76,6 +78,10 @@ export async function reverseGeocode(lat: number, lng: number): Promise<Place> {
 
 /** Position + place names, ready to send with a work event. */
 export async function currentLocation(timeoutMs = 10000): Promise<Loc> {
+  if (isDemo()) {
+    const j = () => (Math.random() - 0.5) * 0.004;
+    return { status: "ok", lat: +(33.8966 + j()).toFixed(6), lng: +(35.4823 + j()).toFixed(6), accuracy: 12, city: "Beirut", neighborhood: "Hamra" };
+  }
   const pos = await getPosition(timeoutMs);
   if (pos.status !== "ok") return pos;
   const place = await reverseGeocode(pos.lat!, pos.lng!);
@@ -92,6 +98,7 @@ export function mapsUrl(lat: number | string, lng: number | string): string {
 
 const EXPLAINED = "yes:location-explained";
 export function locationExplained(): boolean {
+  if (isDemo()) return true;
   try { return localStorage.getItem(EXPLAINED) === "1"; } catch { return false; }
 }
 export function markLocationExplained() {

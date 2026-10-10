@@ -14,6 +14,7 @@ import type { Role } from "@/lib/types";
 import type { TKey } from "@/lib/i18n";
 import { Button, PageLoader, Sheet } from "@/components/ui";
 import { LocationPinger } from "./location-pinger";
+import { DemoBar } from "./demo-bar";
 
 export function Logo({ size = 40, className }: { size?: number; className?: string }) {
   return (
@@ -112,12 +113,13 @@ export function SyncPill() {
 }
 
 export function AppShell({ roles, children, tabRole }: { roles: Role[]; children: React.ReactNode; tabRole?: Role }) {
-  const { ready, online } = useApp();
+  const { ready, online, demo } = useApp();
   const { allowed, profile } = useRequireRole(roles);
   if (!ready || !allowed) return <div className="app-height bg-bg"><PageLoader /></div>;
   return (
     <div className="app-height bg-bg">
-      {!online && (
+      {demo && <DemoBar />}
+      {!online && !demo && (
         <div className="safe-top sticky top-0 z-30 bg-warning-bg text-center text-xs font-semibold text-warning">
           <div className="py-1.5">Offline — sales are saved on this phone and sync automatically</div>
         </div>

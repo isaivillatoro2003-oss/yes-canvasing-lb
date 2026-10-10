@@ -6,6 +6,7 @@ import { useApp } from "@/lib/app-context";
 import { sb } from "@/lib/supabase";
 import { Button, Card, Field, Notice } from "@/components/ui";
 import { PageHeader } from "@/components/app/shell";
+import { isDemo } from "@/lib/demo/state";
 
 const KEY = "yes:reauth-until";
 const MINUTES = 10;
@@ -47,7 +48,7 @@ export function ReauthGate({ title, children }: { title: string; children: React
     setOpen(true);
   }
 
-  if (open) return <>{children}</>;
+  if (open || isDemo()) return <>{children}</>;
   return (
     <>
       <PageHeader back title={title} />

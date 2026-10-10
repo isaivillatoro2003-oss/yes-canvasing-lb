@@ -3,7 +3,8 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Session } from "@supabase/supabase-js";
-import { isConfigured, rpc, sb } from "./supabase";
+import { installDemoClient, isConfigured, rpc, sb } from "./supabase";
+import { DEMO_EVENT, demoPerspective, isDemo, leaveDemo } from "./demo/state";
 import type { Lang, Profile, Role, Settings } from "./types";
 import { LANGS, translate, type TKey } from "./i18n";
 import { cacheGet, cacheSet, startSyncLoop } from "./sync";
@@ -21,6 +22,7 @@ type Ctx = {
   signOut: () => Promise<void>;
   online: boolean;
   toast: (message: string, tone?: ToastTone) => void;
+  demo: boolean;
 };
 
 export type ToastTone = "default" | "success" | "error";
@@ -100,8 +102,42 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  // Demo mode: a database inside this browser, fictional people, perspective switcher.
+  const [demo] = useState(isDemo);
   useEffect(() => {
-    if (!isConfigured) return;
+    if (!demo) return;
+    let mounted = true;
+    let ids: Record<string, string> = {};
+    const apply = async (perspectiveChanged: boolean) => {
+      const { demoUserId } = await import("./demo/runtime");
+      const uid = demoUserId(ids as never, demoPerspective());
+      setSession({ user: { id: uid } } as unknown as Session);
+      await loadProfile(uid);
+      if (perspectiveChanged) setLangOverride(null);
+    };
+    (async () => {
+      try {
+        const { startDemo } = await import("./demo/runtime");
+        const eng = await startDemo();
+        installDemoClient(eng.client);
+        ids = eng.ids;
+        await Promise.all([apply(false), refreshSettings()]);
+      } catch (e) {
+        console.error(e);
+        leaveDemo();
+        // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- full reload restarts the demo engine
+        window.location.assign("/demo?failed=1");
+        return;
+      }
+      if (mounted) setReady(true);
+    })();
+    const onChange = () => { apply(true); };
+    window.addEventListener(DEMO_EVENT, onChange);
+    return () => { mounted = false; window.removeEventListener(DEMO_EVENT, onChange); };
+  }, [demo, loadProfile, refreshSettings]);
+
+  useEffect(() => {
+    if (!isConfigured || demo) return;
     let mounted = true;
     const client = sb();
     (async () => {
@@ -118,7 +154,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     });
     startSyncLoop((n) => toast(`${n} saved transaction${n > 1 ? "s" : ""} synced`, "success"));
     return () => { mounted = false; sub.subscription.unsubscribe(); };
-  }, [loadProfile, refreshSettings, toast]);
+  }, [loadProfile, refreshSettings, toast, demo]);
 
   // Connectivity
   useEffect(() => {
@@ -144,6 +180,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [profile]);
 
   const signOut = useCallback(async () => {
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- full reload restarts the demo engine
+    if (isDemo()) { leaveDemo(); window.location.assign("/"); return; }
     await sb().auth.signOut();
     setProfile(null);
     setSession(null);
@@ -153,8 +191,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     ready, session, profile, settings, lang, setLang,
     t: (k: TKey) => translate(lang, k),
     refreshProfile: () => loadProfile(session?.user.id),
-    refreshSettings, signOut, online, toast,
-  }), [ready, session, profile, settings, lang, setLang, loadProfile, refreshSettings, signOut, online, toast]);
+    refreshSettings, signOut, online, toast, demo,
+  }), [ready, session, profile, settings, lang, setLang, loadProfile, refreshSettings, signOut, online, toast, demo]);
 
   return (
     <AppCtx.Provider value={value}>

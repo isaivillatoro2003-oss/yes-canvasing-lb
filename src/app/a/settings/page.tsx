@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { BarChart3, BookOpen, CalendarCheck, ClipboardCheck, Footprints, KeyRound, LogOut, MapPin, ScrollText, UsersRound } from "lucide-react";
+import { BarChart3, BookOpen, CalendarCheck, ClipboardCheck, FlaskConical, Footprints, KeyRound, LogOut, MapPin, ScrollText, UsersRound } from "lucide-react";
 import { useApp } from "@/lib/app-context";
 import { sb, toAppError } from "@/lib/supabase";
 import type { Lang } from "@/lib/types";
 import { Button, Card, Field, ListGroup, ListRow, Notice, Section, Segmented, Toggle } from "@/components/ui";
 import { PageHeader } from "@/components/app/shell";
+import { ResetData } from "@/components/admin/reset-data";
 
 const METHODS = [
   { key: "cash", label: "Cash" },
@@ -84,6 +85,7 @@ export default function AdminSettings() {
         <Section title="Manage">
           <ListGroup>
             <ListRow href="/a/codes" icon={<KeyRound className="size-4" />} title="Access Codes" />
+            <ListRow href="/a/demo-codes" icon={<FlaskConical className="size-4" />} title="Demo codes" subtitle="Let someone try the app with example data" />
             <ListRow href="/a/teams" icon={<UsersRound className="size-4" />} title="Teams" />
             <ListRow href="/a/books" icon={<BookOpen className="size-4" />} title="Books" />
             <ListRow href="/a/territories" icon={<MapPin className="size-4" />} title="Territories" />
@@ -146,6 +148,8 @@ export default function AdminSettings() {
             <Button block size="lg" loading={busy} onClick={save}>Save settings</Button>
           </Card>
         </Section>
+
+        <ResetData />
 
         <Button block variant="secondary" size="lg" onClick={() => { void signOut(); }}><LogOut className="size-5" /> Sign out</Button>
       </div>

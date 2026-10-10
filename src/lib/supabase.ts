@@ -7,9 +7,14 @@ const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC
 export const isConfigured = Boolean(url && key);
 
 let client: SupabaseClient | null = null;
+let demoClient: SupabaseClient | null = null;
+
+/** In demo mode every query goes to the in-browser demo database instead of Supabase. */
+export function installDemoClient(c: SupabaseClient) { demoClient = c; }
 
 /** Browser client. Security is enforced in Postgres (RLS + RPCs), never here. */
 export function sb(): SupabaseClient {
+  if (demoClient) return demoClient;
   if (!client) {
     if (!url || !key) throw new Error("Supabase is not configured. Add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.");
     client = createClient(url, key, {
