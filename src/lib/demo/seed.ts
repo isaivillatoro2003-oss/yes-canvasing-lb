@@ -65,11 +65,26 @@ export async function seedDemo(db: DemoDb): Promise<Record<DemoKey, string>> {
   const kit = [{ book_id: B.FTH, quantity: 8 }, { book_id: B.HYP, quantity: 8 }, { book_id: B.NML, quantity: 5 }, { book_id: B.HVS, quantity: 5 }, { book_id: B.SWH, quantity: 4 }];
   for (const k of ["maya", "karim", "lea", "omar"] as DemoKey[]) await as("leader", "assign_inventory", { p_student: ids[k], p_items: kit, p_notes: "DEMO weekly kit" });
 
-  // ── Yesterday: Maya and Karim worked, sold, and the leader closed and approved the day
-  for (const [k, place, sales] of [
-    ["maya", PLACES.achrafieh, [[B.FTH, 2, 20, 20, "cash"], [B.HYP, 1, 0, 10, "whish"], [B.NML, 1, 5, 10, "cash"]]],
-    ["karim", PLACES.gemmayze, [[B.HYP, 2, 0, 20, "cash"], [B.SWH, 1, 10, 10, "whish"]]],
-  ] as [DemoKey, typeof PLACES.hamra, [string, number, number, number, string][]][]) {
+  // ── The past week: students worked and sold; the leader closed and approved every day
+  const week = [
+    [6, "maya", PLACES.hamra, [[B.FTH, 1, 5, 10, "cash"], [B.NML, 1, 0, 10, "cash"]]],
+    [6, "lea", PLACES.jounieh, [[B.HYP, 1, 0, 10, "whish"]]],
+    [5, "karim", PLACES.gemmayze, [[B.FTH, 2, 10, 20, "cash"], [B.HVS, 1, 0, 10, "cash"]]],
+    [5, "omar", PLACES.achrafieh, [[B.SWH, 1, 0, 10, "cash"], [B.HYP, 1, 0, 10, "cash"]]],
+    [5, "lea", PLACES.hamra, [[B.NML, 1, 5, 10, "cash"]]],
+    [4, "maya", PLACES.achrafieh, [[B.HYP, 2, 0, 20, "whish"], [B.FTH, 1, 5, 10, "cash"], [B.HVS, 1, 0, 10, "cash"]]],
+    [4, "lea", PLACES.hamra, [[B.HVS, 2, 10, 20, "cash"], [B.FTH, 1, 0, 10, "cash"]]],
+    [4, "omar", PLACES.gemmayze, [[B.NML, 1, 0, 10, "cash"]]],
+    [3, "karim", PLACES.jounieh, [[B.NML, 1, 0, 10, "cash"], [B.SWH, 1, 0, 10, "whish"]]],
+    [3, "omar", PLACES.hamra, [[B.FTH, 1, 0, 10, "cash"]]],
+    [2, "maya", PLACES.gemmayze, [[B.FTH, 2, 0, 20, "cash"], [B.SWH, 1, 5, 10, "whish"]]],
+    [2, "omar", PLACES.hamra, [[B.HYP, 1, 0, 10, "cash"], [B.HVS, 1, 0, 10, "cash"]]],
+    [2, "lea", PLACES.achrafieh, [[B.HYP, 2, 0, 20, "cash"], [B.FTH, 1, 0, 10, "cash"], [B.NML, 1, 0, 10, "whish"]]],
+    [2, "karim", PLACES.achrafieh, [[B.HYP, 1, 0, 10, "cash"]]],
+    [1, "maya", PLACES.achrafieh, [[B.FTH, 2, 20, 20, "cash"], [B.HYP, 1, 0, 10, "whish"], [B.NML, 1, 5, 10, "cash"]]],
+    [1, "karim", PLACES.gemmayze, [[B.HYP, 2, 0, 20, "cash"], [B.SWH, 1, 10, 10, "whish"]]],
+  ] as [number, DemoKey, typeof PLACES.hamra, [string, number, number, number, string][]][];
+  for (const [off, k, place, sales] of week) {
     const s = await as<{ id: string }>(k, "start_work", { p_loc: place });
     for (const [book, qty, donation, paid, method] of sales) {
       await as(k, "create_transaction", { p: {
@@ -80,18 +95,19 @@ export async function seedDemo(db: DemoDb): Promise<Record<DemoKey, string>> {
     await as(k, "add_presentations", { p_delta: 14 });
     await as(k, "stop_work", { p_loc: place });
     await db.query(`
-      update work_sessions set work_date = app_today() - 1, started_at = now() - interval '1 day 5 hours',
-             ended_at = now() - interval '1 day 1 hour', duration_minutes = 240 where id = $1;
-      `, [s.id]);
-    await db.query(`update work_session_events set occurred_at = occurred_at - interval '1 day 3 hours' where session_id = $1`, [s.id]);
-    await db.query(`update transactions set work_date = app_today() - 1, transaction_datetime = transaction_datetime - interval '1 day 3 hours' where session_id = $1`, [s.id]);
-    await db.query(`update inventory_movements set created_at = created_at - interval '1 day 3 hours'
-                     where movement_type = 'SALE' and related_transaction_id in (select id from transactions where session_id = $1)`, [s.id]);
+      update work_sessions set work_date = app_today() - $2::int, started_at = now() - make_interval(days => $2::int, hours => 5),
+             ended_at = now() - make_interval(days => $2::int, hours => 1), duration_minutes = 240 where id = $1;
+      `, [s.id, off]);
+    await db.query(`update work_session_events set occurred_at = occurred_at - make_interval(days => $2::int, hours => 3) where session_id = $1`, [s.id, off]);
+    await db.query(`update transactions set work_date = app_today() - $2::int, transaction_datetime = transaction_datetime - make_interval(days => $2::int, hours => 3) where session_id = $1`, [s.id, off]);
+    await db.query(`update inventory_movements set created_at = created_at - make_interval(days => $2::int, hours => 3)
+                     where movement_type = 'SALE' and related_transaction_id in (select id from transactions where session_id = $1)`, [s.id, off]);
   }
-  for (const k of ["maya", "karim"] as DemoKey[]) {
-    const d = await as<{ finance: { expected: number }; payments: { cash: number; whish: number } }>("leader", "day_summary", { p_student: ids[k], p_date: yesterday() });
+  for (const [off, k] of week) {
+    const day = daysAgo(off);
+    const d = await as<{ finance: { expected: number }; payments: { cash: number; whish: number } }>("leader", "day_summary", { p_student: ids[k], p_date: day });
     const r = await as<{ id: string }>("leader", "close_day", {
-      p_student: ids[k], p_date: yesterday(), p_cash: d.payments.cash, p_whish: d.payments.whish, p_other: 0, p_books_counted: null, p_notes: null, p_override: false,
+      p_student: ids[k], p_date: day, p_cash: d.payments.cash, p_whish: d.payments.whish, p_other: 0, p_books_counted: null, p_notes: null, p_override: false,
     });
     await as("leader", "approve_day", { p_id: r.id, p_notes: null });
   }
@@ -132,8 +148,8 @@ export async function seedDemo(db: DemoDb): Promise<Record<DemoKey, string>> {
   return ids;
 }
 
-function yesterday(): string {
+function daysAgo(n: number): string {
   const d = new Date();
-  d.setDate(d.getDate() - 1);
+  d.setDate(d.getDate() - n);
   return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Beirut", year: "numeric", month: "2-digit", day: "2-digit" }).format(d);
 }

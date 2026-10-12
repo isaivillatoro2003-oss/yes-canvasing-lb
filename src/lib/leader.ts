@@ -2,6 +2,7 @@
 
 import { rpc, sb, toAppError } from "./supabase";
 import type { Profile } from "./types";
+import { shiftDate } from "./format";
 
 export type ActiveSession = {
   session_id: string; user_id: string; full_name: string; team_name: string | null;
@@ -29,4 +30,24 @@ export async function getMyStudents(excludeId?: string): Promise<(Profile & { te
   const { data, error } = await q;
   if (error) throw toAppError(error);
   return data as (Profile & { teams: { team_name: string } | null })[];
+}
+
+export type WeekDay = { date: string; books: number; money: number; transactions: number };
+
+/** Completed sales of the last 7 days (today included) the caller can see, grouped by work day. */
+export async function getWeek(today: string): Promise<WeekDay[]> {
+  const days = Array.from({ length: 7 }, (_, i) => shiftDate(today, i - 6));
+  const { data, error } = await sb().from("transactions")
+    .select("work_date, expected_total, transaction_items(quantity)")
+    .eq("status", "completed").gte("work_date", days[0]).lte("work_date", today);
+  if (error) throw toAppError(error);
+  const by = new Map(days.map((d) => [d, { date: d, books: 0, money: 0, transactions: 0 }]));
+  for (const t of (data ?? []) as { work_date: string; expected_total: number | string; transaction_items: { quantity: number }[] }[]) {
+    const d = by.get(t.work_date);
+    if (!d) continue;
+    d.transactions += 1;
+    d.money += Number(t.expected_total);
+    d.books += (t.transaction_items ?? []).reduce((n, i) => n + i.quantity, 0);
+  }
+  return days.map((d) => by.get(d)!);
 }

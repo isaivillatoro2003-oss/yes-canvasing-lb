@@ -178,6 +178,7 @@ button, [role="button"], .no-select {
   box-shadow: inset 0 0.5px 0 rgb(255 255 255 / 0.22), inset 0 0 0 0.5px rgb(255 255 255 / 0.08);
 }
 .hero { background: var(--hero); }
+.hero-paused { background: linear-gradient(160deg, #3a4a63 0%, #27354b 55%, #1d2a3d 100%); }
 .scrim-blur { -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
 
 /* Skeleton loading: calm shimmer instead of spinners */
@@ -256,3 +257,22 @@ button, [role="button"], .no-select {
 input[type="number"]::-webkit-outer-spin-button,
 input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 input[type="number"] { -moz-appearance: textfield; }
+
+/* Launch splash: the logo pops in, the book arc draws itself, then the whole card lifts away */
+.splash { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center;
+  animation: splash-out 420ms cubic-bezier(0.4, 0, 0.2, 1) 1250ms forwards; }
+html.splash-seen .splash { display: none; }
+.splash-logo { border-radius: 20px; box-shadow: 0 20px 50px rgb(0 0 0 / 0.35), inset 0 1px 0 rgb(255 255 255 / 0.12);
+  animation: splash-pop 650ms cubic-bezier(0.22, 1.2, 0.36, 1) both; }
+.splash-arc { stroke-dasharray: 1; stroke-dashoffset: 1; animation: splash-draw 700ms cubic-bezier(0.65, 0, 0.35, 1) 300ms forwards; }
+.splash-word { opacity: 0; animation: splash-fade 400ms ease 200ms forwards; }
+.splash-tag { opacity: 0; animation: splash-rise 500ms cubic-bezier(0.23, 1, 0.32, 1) 550ms forwards; }
+@keyframes splash-pop { from { opacity: 0; transform: scale(0.82); } to { opacity: 1; transform: none; } }
+@keyframes splash-draw { to { stroke-dashoffset: 0; } }
+@keyframes splash-fade { to { opacity: 1; } }
+@keyframes splash-rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes splash-out { to { opacity: 0; transform: scale(1.04); visibility: hidden; pointer-events: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .splash { animation: splash-out 200ms ease 500ms forwards; }
+  .splash-logo, .splash-arc, .splash-word, .splash-tag { animation: none; opacity: 1; stroke-dashoffset: 0; }
+}

@@ -5,11 +5,12 @@ import { ClipboardCheck, Users } from "lucide-react";
 import { useApp } from "@/lib/app-context";
 import { useData, useNow } from "@/lib/hooks";
 import { getReport } from "@/lib/queries";
-import { getActiveSessions, getPendingDays } from "@/lib/leader";
+import { getActiveSessions, getPendingDays, getWeek } from "@/lib/leader";
 import { elapsedLabel, initials, minutesToLabel, money, todayIn } from "@/lib/format";
 import { Card, EmptyState, ListGroup, ListRow, Notice, Section, Stat } from "@/components/ui";
 import { PageHeader } from "@/components/app/shell";
 import { LiveWhere } from "@/components/app/live-where";
+import { WeekChart } from "@/components/app/week-chart";
 
 export default function LeaderDashboard() {
   const { profile, settings } = useApp();
@@ -17,6 +18,7 @@ export default function LeaderDashboard() {
   const report = useData(`leader:today:${today}`, () => getReport({ from: today, to: today }), [today]);
   const active = useData("leader:active", getActiveSessions);
   const pending = useData("leader:pending", () => getPendingDays(200));
+  const week = useData(`leader:week:${today}`, () => getWeek(today), [today]);
   const now = useNow(1000);
   const r = report.data;
   const team = (active.data ?? []).filter((s) => s.user_id !== profile!.id);
@@ -37,6 +39,8 @@ export default function LeaderDashboard() {
           <Stat label="Money Received" value={money(r?.received, settings.currency)} />
           <Stat label="Work Hours" value={minutesToLabel(r?.work_minutes)} sub={`${r?.presentations ?? 0} presentations · ${r?.transactions ?? 0} transactions`} className="col-span-2" />
         </div>
+
+        {week.data && <WeekChart days={week.data} currency={settings.currency} />}
 
         {toClose > 0 && (
           <Link href="/l/reconcile" className="pressable flex items-center gap-3 rounded-3xl bg-primary p-4 text-primary-fg shadow-card">

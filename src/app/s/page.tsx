@@ -140,7 +140,7 @@ export default function StudentHome() {
             <motion.div key="working"
               initial={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
               transition={{ type: "spring", bounce: 0, duration: 0.35 }}>
-              <Card className={cn("overflow-hidden p-0 text-white shadow-float", paused ? "bg-[#27354b]" : "hero")}>
+              <Card className={cn("overflow-hidden p-0 text-white shadow-float", paused ? "hero-paused" : "hero")}>
                 <div className="p-6">
                   <div className="flex items-center gap-2 text-overline text-[var(--cream-200)]/80">
                     {paused ? <><Pause className="size-3.5 fill-current" /> PAUSED</> : <><span className="live-ring size-2 rounded-full bg-[#4cc38a] text-[#4cc38a]" /> {t("home.workingNow")}</>}

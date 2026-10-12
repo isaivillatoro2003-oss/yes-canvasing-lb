@@ -92,7 +92,7 @@ describe("demo engine (PostgREST emulator over the real schema)", () => {
     assert.equal(r.error, null);
     assert.ok(r.data.transactions >= 4);
     const recons = await client.from("daily_reconciliations").select("*, profiles!daily_reconciliations_student_id_fkey(full_name)").order("work_date", { ascending: false });
-    assert.equal(recons.data!.length, 2);
+    assert.equal(recons.data!.length, 16);
     assert.ok(recons.data!.every((x) => x.status === "approved"));
   });
 

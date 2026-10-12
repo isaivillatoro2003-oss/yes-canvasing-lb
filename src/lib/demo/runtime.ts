@@ -8,7 +8,7 @@ import { MIGRATIONS } from "./schema.generated";
 import { DEMO_USERS, seedDemo, type DemoKey } from "./seed";
 import type { Role } from "../types";
 
-const DATA_DIR = "idb://yes-demo-v1";
+const DATA_DIR = "idb://yes-demo-v2";
 const PERSPECTIVE_USER: Record<Role, DemoKey> = { student: "maya", leader: "leader", admin: "admin" };
 
 type Engine = { client: SupabaseClient; ids: Record<DemoKey, string>; close: () => Promise<void> };
@@ -77,7 +77,7 @@ export async function resetDemo() {
   try { await (await engine)?.close(); } catch { /* not started */ }
   engine = null;
   await new Promise<void>((resolve) => {
-    const req = indexedDB.deleteDatabase("/pglite/yes-demo-v1");
+    const req = indexedDB.deleteDatabase("/pglite/yes-demo-v2");
     req.onsuccess = req.onerror = req.onblocked = () => resolve();
   });
 }

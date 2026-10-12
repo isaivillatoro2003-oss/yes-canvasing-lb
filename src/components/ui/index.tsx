@@ -344,11 +344,12 @@ export function Sheet({ open, onClose, title, children, footer }: {
             dragConstraints={{ top: 0, bottom: 0 }} dragElastic={{ top: 0.05, bottom: 0.9 }}
             onDragEnd={(_, info) => { if (info.offset.y > 120 || info.velocity.y > 600) onClose(); }}
           >
-            <div className="flex shrink-0 cursor-grab touch-none flex-col items-center pt-2.5"
+            <div className="flex shrink-0 cursor-grab touch-none flex-col items-center pb-1 pt-2.5"
                  onPointerDown={(e) => controls.start(e)}>
               <span className="h-1.5 w-10 rounded-full bg-line-strong" aria-hidden />
             </div>
-            <div className="flex shrink-0 items-center justify-between gap-3 px-5 pb-2 pt-2">
+            <div className="flex shrink-0 touch-none items-center justify-between gap-3 px-5 pb-2 pt-2"
+                 onPointerDown={(e) => { if (!(e.target as HTMLElement).closest("button")) controls.start(e); }}>
               <div className="text-headline">{title}</div>
               <button type="button" onClick={onClose} aria-label="Close"
                 className="pressable grid size-9 place-items-center rounded-full bg-sunken text-muted"><X className="size-4" /></button>
