@@ -20,9 +20,9 @@ export default function Welcome() {
   if (!isConfigured) return <SetupNotice />;
 
   return (
-    <main className="app-height safe-top safe-bottom relative flex flex-col overflow-hidden bg-[var(--navy-900)] text-[var(--cream-100)]">
+    <main className="hero app-height safe-top safe-bottom relative flex flex-col overflow-hidden text-white">
       {/* soft light from the top, like paper catching the sun */}
-      <div aria-hidden className="pointer-events-none absolute -top-40 left-1/2 h-[28rem] w-[40rem] -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,rgba(199,154,58,0.22),transparent)]" />
+      <div aria-hidden className="pointer-events-none absolute -top-40 left-1/2 h-[28rem] w-[40rem] -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,rgba(91,141,239,0.28),transparent)]" />
       <div className="relative mx-auto flex w-full max-w-md flex-1 flex-col px-6">
         <div className="enter flex flex-1 flex-col justify-center pt-16">
           <Logo size={72} className="shadow-float rounded-[18px] ring-1 ring-white/10" />
@@ -38,7 +38,7 @@ export default function Welcome() {
               const I = Icon as typeof GraduationCap;
               return (
                 <li key={i} className="flex items-center gap-3">
-                  <span className="grid size-9 place-items-center rounded-xl bg-white/8 ring-1 ring-white/10"><I className="size-[18px] text-[var(--gold-500)]" /></span>
+                  <span className="glass-dark grid size-9 place-items-center rounded-[12px]"><I className="size-[18px] text-[var(--steel-300)]" /></span>
                   {label as string}
                 </li>
               );
@@ -46,10 +46,10 @@ export default function Welcome() {
           </ul>
         </div>
         <div className="enter space-y-3 pb-8 pt-10" style={{ animationDelay: "80ms" }}>
-          <LinkButton href="/sign-in" size="lg" block className="!bg-[var(--cream-100)] !text-[var(--navy-900)]">{t("auth.signIn")}</LinkButton>
-          <LinkButton href="/sign-up" size="lg" block variant="ghost" className="ring-1 ring-white/20 !text-[var(--cream-100)]">{t("auth.createAccount")}</LinkButton>
+          <LinkButton href="/sign-in" size="lg" block className="!bg-white !text-[var(--navy-900)] !shadow-float">{t("auth.signIn")}</LinkButton>
+          <LinkButton href="/sign-up" size="lg" block variant="ghost" className="glass-dark !text-white">{t("auth.createAccount")}</LinkButton>
           <p className="pt-2 text-center text-xs text-[var(--cream-200)]/50">You need an access code from your YES leader to create an account. · <a href="/privacy" className="underline">Privacy</a></p>
-          <a href="/demo" className="pressable block pt-1 text-center text-sm font-semibold text-[var(--gold-500)]">Have a demo code? Try the demo →</a>
+          <a href="/demo" className="pressable block pt-1 text-center text-sm font-semibold text-[var(--steel-300)]">Have a demo code? Try the demo →</a>
         </div>
       </div>
     </main>

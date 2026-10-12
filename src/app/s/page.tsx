@@ -10,6 +10,7 @@ import { getActiveSession, getInventory, getReport } from "@/lib/queries";
 import { rpc, toAppError } from "@/lib/supabase";
 import { cn, elapsedLabel, minutesToLabel, money, todayIn } from "@/lib/format";
 import type { WorkSession } from "@/lib/types";
+import { haptic } from "@/lib/haptics";
 import { currentLocation, locationExplained, markLocationExplained, placeLabel, type Loc } from "@/lib/location";
 import { Button, Card, ListGroup, ListRow, Notice, Section, Stat, useConfirm } from "@/components/ui";
 import { PageHeader } from "@/components/app/shell";
@@ -66,6 +67,7 @@ export default function StudentHome() {
       const loc = await locate();
       const s = await rpc<WorkSession>("start_work", { p_loc: loc });
       session.setData(s);
+      haptic("success");
       placeToast("Work started", loc);
       report.refresh();
     } catch (e) {
@@ -83,6 +85,7 @@ export default function StudentHome() {
       const loc = await locate();
       const s = await rpc<WorkSession>(paused ? "resume_work" : "pause_work", { p_loc: loc });
       session.setData(s);
+      haptic();
       placeToast(paused ? "Work resumed" : "Work paused", loc);
     } catch (e) {
       toast(toAppError(e).message, "error");
@@ -100,6 +103,7 @@ export default function StudentHome() {
       const loc = await locate();
       await rpc<WorkSession>("stop_work", { p_session: active?.id ?? null, p_loc: loc });
       session.setData(null);
+      haptic("success");
       placeToast("Work stopped. Time saved", loc);
       report.refresh();
     } catch (e) {
@@ -136,10 +140,10 @@ export default function StudentHome() {
             <motion.div key="working"
               initial={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
               transition={{ type: "spring", bounce: 0, duration: 0.35 }}>
-              <Card className={cn("overflow-hidden p-0 text-[var(--cream-100)]", paused ? "bg-[#5b4a2a]" : "bg-[var(--navy-900)]")}>
+              <Card className={cn("overflow-hidden p-0 text-white shadow-float", paused ? "bg-[#27354b]" : "hero")}>
                 <div className="p-6">
                   <div className="flex items-center gap-2 text-overline text-[var(--cream-200)]/80">
-                    {paused ? <><Pause className="size-3.5 fill-current" /> PAUSED</> : <><span className="live-dot size-2 rounded-full bg-[#4cc38a]" /> {t("home.workingNow")}</>}
+                    {paused ? <><Pause className="size-3.5 fill-current" /> PAUSED</> : <><span className="live-ring size-2 rounded-full bg-[#4cc38a] text-[#4cc38a]" /> {t("home.workingNow")}</>}
                   </div>
                   <div className={cn("mt-2 text-[3.25rem] font-bold leading-none text-numeric", paused && "opacity-60")} aria-live="off">
                     {elapsedLabel(clockStart, clockNow)}
@@ -161,9 +165,9 @@ export default function StudentHome() {
                   </div>
                   <div className="flex gap-2">
                     <button type="button" aria-label="Remove a presentation" onClick={() => presentation(-1)} disabled={active.presentations === 0}
-                      className="pressable grid size-12 place-items-center rounded-2xl bg-white/10 disabled:opacity-40"><Minus className="size-5" /></button>
+                      className="pressable glass-dark grid size-12 place-items-center rounded-[14px] disabled:opacity-40"><Minus className="size-5" /></button>
                     <button type="button" aria-label="Add a presentation" onClick={() => presentation(1)}
-                      className="pressable grid h-12 place-items-center rounded-2xl bg-[var(--cream-100)] px-5 font-semibold text-[var(--navy-900)]">
+                      className="pressable grid h-12 place-items-center rounded-[14px] bg-white px-5 font-semibold text-[var(--navy-900)] shadow-card">
                       <span className="inline-flex items-center gap-1.5"><Plus className="size-5" /> Presentation</span>
                     </button>
                   </div>

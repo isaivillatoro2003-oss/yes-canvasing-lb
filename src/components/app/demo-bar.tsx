@@ -37,15 +37,15 @@ export function DemoBar() {
 
   return (
     <>
-      <div className="safe-top sticky top-0 z-30 bg-[var(--gold-500)] text-[var(--navy-900)]">
+      <div className="safe-top sticky top-0 z-40 border-b border-white/10 bg-[var(--material-dark)] text-white [backdrop-filter:blur(24px)_saturate(180%)] [-webkit-backdrop-filter:blur(24px)_saturate(180%)]">
         <div className="mx-auto flex max-w-lg items-center gap-2 px-3 py-1.5">
-          <button type="button" onClick={() => setOpen(true)} className="pressable inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--navy-900)] px-2.5 py-1 text-[11px] font-bold tracking-wide text-[var(--cream-100)]">
+          <button type="button" onClick={() => setOpen(true)} className="pressable inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--steel-500)] px-2.5 py-1 text-[11px] font-bold tracking-wide text-white">
             <FlaskConical className="size-3.5" /> DEMO
           </button>
-          <div role="tablist" aria-label="Demo perspective" className="flex flex-1 gap-1 rounded-xl bg-black/10 p-0.5">
+          <div role="tablist" aria-label="Demo perspective" className="flex flex-1 gap-1 rounded-[10px] bg-white/10 p-0.5">
             {VIEWS.map((v) => (
               <button key={v.role} role="tab" type="button" aria-selected={current === v.role} onClick={() => switchTo(v.role)}
-                className={cn("pressable h-7 flex-1 rounded-lg text-xs font-semibold", current === v.role ? "bg-[var(--cream-100)] shadow-sm" : "opacity-80")}>
+                className={cn("pressable h-7 flex-1 rounded-lg text-xs font-semibold", current === v.role ? "bg-white text-[var(--navy-900)] shadow-sm" : "text-white/75")}>
                 {v.label}
               </button>
             ))}

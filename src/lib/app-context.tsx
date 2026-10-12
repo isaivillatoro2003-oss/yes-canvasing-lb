@@ -200,10 +200,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       <div className="pointer-events-none fixed inset-x-0 z-[60] flex flex-col items-center gap-2 px-4"
            style={{ top: "calc(env(safe-area-inset-top, 0px) + 12px)" }} aria-live="polite">
         {toasts.map((t) => (
-          <div key={t.id}
-               className={`enter pointer-events-auto max-w-sm rounded-2xl px-4 py-3 text-sm font-medium shadow-float ${
-                 t.tone === "error" ? "bg-danger text-white" : t.tone === "success" ? "bg-success text-white" : "bg-primary text-primary-fg"}`}>
-            {t.message}
+          <div key={t.id} role={t.tone === "error" ? "alert" : "status"}
+               className="toast-in pointer-events-auto flex max-w-sm items-center gap-2.5 rounded-full bg-[var(--material-dark)] py-2.5 pe-4 ps-2.5 text-sm font-medium text-white shadow-float [backdrop-filter:blur(24px)_saturate(180%)] [-webkit-backdrop-filter:blur(24px)_saturate(180%)]">
+            <span className={`grid size-6 shrink-0 place-items-center rounded-full text-[13px] font-bold ${
+              t.tone === "error" ? "bg-[#f07a6c] text-[#3a0c07]" : t.tone === "success" ? "bg-[#4cc38a] text-[#06301d]" : "bg-[#5b8def] text-white"}`} aria-hidden>
+              {t.tone === "error" ? "!" : t.tone === "success" ? "✓" : "i"}
+            </span>
+            <span>{t.message}</span>
           </div>
         ))}
       </div>

@@ -11,6 +11,7 @@ import { sb } from "@/lib/supabase";
 import { submitTransaction, type TxPayload } from "@/lib/sync";
 import { balanceOf, cn, methodLabel, money } from "@/lib/format";
 import { uuid } from "@/lib/uuid";
+import { haptic } from "@/lib/haptics";
 import { currentLocation, placeLabel, type Loc } from "@/lib/location";
 import type { InventoryRow, Territory, TxSummary } from "@/lib/types";
 import {
@@ -134,6 +135,7 @@ export default function NewTransaction() {
       return l ? { ...r, distributed: r.distributed + l.quantity, remaining: r.remaining - l.quantity } : r;
     });
     inventory.setData(nextInv);
+    haptic("success");
     if (result.state === "saved") {
       setDone({ queued: false, summary: result.summary });
       inventory.refresh();
@@ -166,7 +168,12 @@ export default function NewTransaction() {
           transition={{ type: "spring", bounce: 0, duration: 0.4 }} className="text-center">
           <motion.div initial={reduce ? false : { scale: 0.6 }} animate={{ scale: 1 }} transition={{ type: "spring", bounce: 0.35, duration: 0.5 }}
             className={cn("mx-auto grid size-20 place-items-center rounded-full", done.queued ? "bg-warning-bg text-warning" : "bg-success-bg text-success")}>
-            {done.queued ? <CloudUpload className="size-9" /> : <Check className="size-10 stroke-[2.5]" />}
+            {done.queued ? <CloudUpload className="size-9" /> : (
+              <svg viewBox="0 0 24 24" className="size-10" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <motion.path d="M5 12.5l4.5 4.5L19 7.5" initial={reduce ? false : { pathLength: 0 }} animate={{ pathLength: 1 }}
+                  transition={{ duration: 0.45, delay: 0.15, ease: [0.23, 1, 0.32, 1] }} />
+              </svg>
+            )}
           </motion.div>
           <h1 className="text-title mt-5">{done.queued ? "Saved on this phone" : "TRANSACTION SAVED"}</h1>
           <p className="mt-1 text-muted">{done.queued ? "Waiting to sync. It will upload automatically when you're back online." : "Inventory updated."}</p>

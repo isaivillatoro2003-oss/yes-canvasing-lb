@@ -8,24 +8,25 @@ import { cn } from "@/lib/format";
 
 /* ───────────── Button ───────────── */
 type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant?: "primary" | "secondary" | "ghost" | "danger" | "success";
+  variant?: "primary" | "navy" | "secondary" | "ghost" | "danger" | "success";
   size?: "sm" | "md" | "lg" | "xl";
   loading?: boolean;
   block?: boolean;
 };
 
 const variants = {
-  primary: "bg-primary text-primary-fg shadow-card",
+  primary: "bg-accent text-accent-fg shadow-accent",
+  navy: "bg-primary text-primary-fg shadow-card",
   secondary: "bg-elevated text-fg shadow-card ring-1 ring-line",
   ghost: "bg-transparent text-fg",
   danger: "bg-danger text-white shadow-card",
   success: "bg-success text-white shadow-card",
 };
 const sizes = {
-  sm: "h-9 px-3.5 text-sm rounded-xl gap-1.5",
-  md: "h-12 px-5 text-[15px] rounded-2xl gap-2",
-  lg: "h-14 px-6 text-base rounded-2xl gap-2",
-  xl: "h-20 px-8 text-lg rounded-[1.75rem] gap-3 tracking-wide",
+  sm: "h-9 px-3.5 text-sm rounded-[10px] gap-1.5",
+  md: "h-12 px-5 text-[15px] rounded-[14px] gap-2",
+  lg: "h-14 px-6 text-base rounded-[16px] gap-2",
+  xl: "h-20 px-8 text-lg rounded-[22px] gap-3 tracking-wide",
 };
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
@@ -63,7 +64,7 @@ export function LinkButton({ href, variant = "primary", size = "md", block, clas
 
 /* ───────────── Surfaces ───────────── */
 export function Card({ className, children, ...rest }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("rounded-3xl bg-elevated shadow-card", className)} {...rest}>{children}</div>;
+  return <div className={cn("rounded-[20px] bg-elevated shadow-card", className)} {...rest}>{children}</div>;
 }
 
 export function Section({ title, action, children, className }: {
@@ -86,9 +87,9 @@ export function Stat({ label, value, tone, sub, className }: {
   label: string; value: React.ReactNode; tone?: "default" | "success" | "warning" | "danger"; sub?: React.ReactNode; className?: string;
 }) {
   return (
-    <div className={cn("rounded-2xl bg-elevated p-4 shadow-card", className)}>
-      <div className="text-xs font-medium text-muted">{label}</div>
-      <div className={cn("mt-1 text-2xl font-bold text-numeric",
+    <div className={cn("rounded-[18px] bg-elevated p-4 shadow-card", className)}>
+      <div className="text-[11px] font-semibold uppercase tracking-[0.06em] text-subtle">{label}</div>
+      <div className={cn("mt-1.5 text-[26px] font-semibold leading-none tracking-[-0.03em] text-numeric",
         tone === "success" && "text-success", tone === "warning" && "text-warning", tone === "danger" && "text-danger")}>
         {value}
       </div>
@@ -112,7 +113,7 @@ export function Badge({ tone = "default", children, className }: {
 }
 
 export function ListGroup({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <div className={cn("divide-y divide-line overflow-hidden rounded-3xl bg-elevated shadow-card", className)}>{children}</div>;
+  return <div className={cn("divide-y divide-line overflow-hidden rounded-[20px] bg-elevated shadow-card", className)}>{children}</div>;
 }
 
 export function ListRow({ href, onClick, icon, title, subtitle, trailing, chevron = true, className }: {
@@ -151,8 +152,18 @@ export function Spinner({ className }: { className?: string }) {
   return <Loader2 className={cn("size-5 animate-spin text-muted", className)} aria-label="Loading" />;
 }
 
+/** Calm skeleton that hints at the layout that's coming. */
 export function PageLoader() {
-  return <div className="grid min-h-[50dvh] place-items-center"><Spinner /></div>;
+  return (
+    <div className="space-y-3 px-5 pt-4" aria-busy="true" aria-label="Loading">
+      <div className="skeleton h-28 rounded-[20px]" />
+      <div className="grid grid-cols-2 gap-3">
+        <div className="skeleton h-20 rounded-[18px]" /><div className="skeleton h-20 rounded-[18px]" />
+        <div className="skeleton h-20 rounded-[18px]" /><div className="skeleton h-20 rounded-[18px]" />
+      </div>
+      <div className="skeleton h-14 rounded-[16px]" />
+    </div>
+  );
 }
 
 export function Notice({ tone = "info", children, className }: { tone?: "info" | "warning" | "danger" | "success"; children: React.ReactNode; className?: string }) {
@@ -277,13 +288,19 @@ export function MoneyInput({ label, value, onChange, currency = "$", hint, autoF
 export function Segmented<T extends string>({ value, onChange, options, className }: {
   value: T; onChange: (v: T) => void; options: { value: T; label: string }[]; className?: string;
 }) {
+  const id = useId();
+  const reduce = useReducedMotion();
   return (
-    <div role="tablist" className={cn("flex gap-1 overflow-x-auto rounded-2xl bg-sunken p-1", className)}>
+    <div role="tablist" className={cn("flex gap-1 overflow-x-auto rounded-[14px] bg-sunken p-1", className)}>
       {options.map((o) => (
         <button key={o.value} role="tab" aria-selected={value === o.value} type="button" onClick={() => onChange(o.value)}
-          className={cn("pressable h-9 shrink-0 grow rounded-xl px-3 text-sm font-semibold transition-colors",
-            value === o.value ? "bg-elevated text-fg shadow-card" : "text-muted")}>
-          {o.label}
+          className={cn("relative h-9 shrink-0 grow rounded-[10px] px-3 text-sm font-semibold transition-colors duration-200",
+            value === o.value ? "text-fg" : "text-muted")}>
+          {value === o.value && (
+            <motion.span layoutId={`seg-${id}`} aria-hidden className="absolute inset-0 rounded-[10px] bg-elevated shadow-card"
+              transition={reduce ? { duration: 0 } : { type: "spring", bounce: 0, duration: 0.32 }} />
+          )}
+          <span className="relative">{o.label}</span>
         </button>
       ))}
     </div>
@@ -313,12 +330,12 @@ export function Sheet({ open, onClose, title, children, footer }: {
     <AnimatePresence>
       {open && (
         <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
-          <motion.div className="absolute inset-0 bg-[var(--scrim)]" onClick={onClose}
+          <motion.div className="scrim-blur absolute inset-0 bg-[var(--scrim)]" onClick={onClose}
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} />
           <motion.div
             ref={panelRef}
             role="dialog" aria-modal="true" tabIndex={-1}
-            className="relative flex max-h-[88dvh] w-full max-w-lg flex-col rounded-t-[1.75rem] bg-bg shadow-float outline-none sm:rounded-[1.75rem]"
+            className="relative flex max-h-[88dvh] w-full max-w-lg flex-col rounded-t-[26px] bg-bg shadow-float outline-none sm:rounded-[26px]"
             initial={reduce ? { opacity: 0 } : { y: "100%" }}
             animate={reduce ? { opacity: 1 } : { y: 0 }}
             exit={reduce ? { opacity: 0 } : { y: "100%" }}

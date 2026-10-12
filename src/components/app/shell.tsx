@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { motion, useReducedMotion } from "motion/react";
 import {
   BarChart3, BookOpen, CloudOff, Home, LayoutDashboard, MoreHorizontal, Plus, RefreshCw, Settings, Users, Wallet, ChevronLeft,
 } from "lucide-react";
@@ -19,10 +20,10 @@ import { DemoBar } from "./demo-bar";
 export function Logo({ size = 40, className }: { size?: number; className?: string }) {
   return (
     <svg width={size} height={size} viewBox="0 0 64 64" className={className} role="img" aria-label="YES">
-      <rect width="64" height="64" rx="16" fill="#0B1F3A" />
-      <path d="M14 46c6-4 12-4 18 0 6-4 12-4 18 0" stroke="#C79A3A" strokeWidth="3" fill="none" strokeLinecap="round" />
+      <rect width="64" height="64" rx="15" fill="#0B1F3A" />
+      <path d="M14 46c6-4 12-4 18 0 6-4 12-4 18 0" stroke="#5B8DEF" strokeWidth="3" fill="none" strokeLinecap="round" />
       <text x="32" y="36" textAnchor="middle" fontFamily="system-ui,-apple-system,Segoe UI,Roboto,sans-serif"
-        fontWeight="800" fontSize="21" letterSpacing="-0.5" fill="#F6F1E7">YES</text>
+        fontWeight="800" fontSize="21" letterSpacing="-0.5" fill="#FFFFFF">YES</text>
     </svg>
   );
 }
@@ -57,6 +58,7 @@ function TabBar({ role }: { role: Role }) {
   const pathname = usePathname();
   const { t } = useApp();
   const tabs = TABS[role];
+  const reduce = useReducedMotion();
   return (
     <nav className="material fixed inset-x-0 bottom-0 z-40 border-t border-line safe-bottom" aria-label="Main">
       <ul className="mx-auto flex max-w-lg items-stretch justify-around px-2">
@@ -66,16 +68,21 @@ function TabBar({ role }: { role: Role }) {
           return (
             <li key={tab.href} className="flex-1">
               <Link href={tab.href} aria-current={active ? "page" : undefined}
-                className={cn("pressable flex h-16 flex-col items-center justify-center gap-1 text-[11px] font-semibold no-select",
-                  active ? "text-fg" : "text-subtle")}>
+                className={cn("pressable relative flex h-16 flex-col items-center justify-center gap-1 text-[11px] font-semibold no-select",
+                  active ? "text-accent" : "text-subtle")}>
+                {active && !tab.primary && (
+                  <motion.span layoutId="tab-pill" aria-hidden
+                    className="absolute inset-x-1.5 inset-y-2 rounded-[14px] bg-accent-soft"
+                    transition={reduce ? { duration: 0 } : { type: "spring", bounce: 0.15, duration: 0.4 }} />
+                )}
                 {tab.primary ? (
-                  <span className={cn("grid size-9 place-items-center rounded-2xl", active ? "bg-primary text-primary-fg" : "bg-primary/90 text-primary-fg")}>
+                  <span className="grid size-10 place-items-center rounded-full bg-accent text-accent-fg shadow-accent">
                     <Icon className="size-5" />
                   </span>
                 ) : (
-                  <Icon className={cn("size-6", active && "stroke-[2.25]")} />
+                  <Icon className={cn("relative size-[22px]", active && "stroke-[2.25]")} />
                 )}
-                {!tab.primary && <span>{t(tab.key)}</span>}
+                {!tab.primary && <span className="relative">{t(tab.key)}</span>}
               </Link>
             </li>
           );
@@ -124,7 +131,7 @@ export function AppShell({ roles, children, tabRole }: { roles: Role[]; children
           <div className="py-1.5">Offline — sales are saved on this phone and sync automatically</div>
         </div>
       )}
-      <main className="pb-tabbar mx-auto max-w-lg">{children}</main>
+      <main className="pb-tabbar mx-auto max-w-lg"><PageTransition>{children}</PageTransition></main>
       <TabBar role={tabRole ?? profile?.role ?? "student"} />
       <PrivacyGate />
       <LocationPinger />
@@ -137,7 +144,25 @@ export function PageHeader({ title, subtitle, back, action, showSync = true }: {
   title: React.ReactNode; subtitle?: React.ReactNode; back?: string | true; action?: React.ReactNode; showSync?: boolean;
 }) {
   const router = useRouter();
+  const { demo } = useApp();
+  const titleRef = useRef<HTMLHeadingElement>(null);
+  const [compact, setCompact] = useState(false);
+  useEffect(() => {
+    const el = titleRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    const io = new IntersectionObserver(([e]) => setCompact(!e.isIntersecting), { rootMargin: "-64px 0px 0px 0px" });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
   return (
+    <>
+    <div aria-hidden={!compact}
+      className={cn("material fixed inset-x-0 top-0 z-30 border-b border-line safe-top transition-opacity duration-200",
+        compact && !demo ? "opacity-100" : "pointer-events-none opacity-0")}>
+      <div className="mx-auto flex h-11 max-w-lg items-center justify-center px-5 text-[15px] font-semibold">
+        <span className="truncate">{title}</span>
+      </div>
+    </div>
     <header className="safe-top px-5 pb-3">
       <div className="flex h-11 items-center justify-between gap-2">
         {back ? (
@@ -149,9 +174,23 @@ export function PageHeader({ title, subtitle, back, action, showSync = true }: {
         ) : showSync ? <SyncPill /> : <span />}
         <div className="flex items-center gap-2">{action}</div>
       </div>
-      <h1 className="text-title mt-1">{title}</h1>
+      <h1 ref={titleRef} className="text-title mt-1">{title}</h1>
       {subtitle && <p className="mt-1 text-[15px] text-muted">{subtitle}</p>}
     </header>
+    </>
+  );
+}
+
+function PageTransition({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const reduce = useReducedMotion();
+  return (
+    <motion.div key={pathname}
+      initial={reduce ? { opacity: 0 } : { opacity: 0, y: 10 }}
+      animate={reduce ? { opacity: 1 } : { opacity: 1, y: 0 }}
+      transition={{ duration: reduce ? 0.15 : 0.32, ease: [0.23, 1, 0.32, 1] }}>
+      {children}
+    </motion.div>
   );
 }
 
