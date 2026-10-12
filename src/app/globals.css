@@ -19,9 +19,9 @@
   --cream-200: #dfe6f0;
   --cream-300: #c3cedd;
 
-  --bg: #f2f4f8;
+  --bg: #ffffff;
   --bg-elevated: #ffffff;
-  --bg-sunken: #e8ecf2;
+  --bg-sunken: #eef1f5;
   --fg: var(--navy-900);
   --fg-muted: #55657d;
   --fg-subtle: #8a97aa;
@@ -39,11 +39,11 @@
   --danger: #c4362b;
   --danger-bg: #fde8e6;
   --info-bg: var(--steel-100);
-  --material: rgb(246 248 251 / 0.72);
+  --material: rgb(255 255 255 / 0.76);
   --material-strong: rgb(255 255 255 / 0.82);
   --material-dark: rgb(11 31 58 / 0.78);
   --scrim: rgb(5 13 27 / 0.32);
-  --shadow-card: 0 0 0 0.5px rgb(11 31 58 / 0.05), 0 1px 2px rgb(11 31 58 / 0.04), 0 8px 24px -12px rgb(11 31 58 / 0.14);
+  --shadow-card: 0 0 0 1px rgb(11 31 58 / 0.07), 0 1px 2px rgb(11 31 58 / 0.04), 0 10px 28px -14px rgb(11 31 58 / 0.18);
   --shadow-float: 0 0 0 0.5px rgb(11 31 58 / 0.06), 0 12px 40px -8px rgb(11 31 58 / 0.24), 0 2px 6px rgb(11 31 58 / 0.06);
   --shadow-accent: 0 8px 20px -8px rgb(47 111 219 / 0.55);
   --hero: radial-gradient(120% 90% at 85% 0%, #1d4f9e 0%, rgba(29 79 158 / 0) 55%), linear-gradient(160deg, #102a4f 0%, #0b1f3a 55%, #08172d 100%);
@@ -188,7 +188,7 @@ button, [role="button"], .no-select {
   background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.55), transparent);
   animation: shimmer 1.4s var(--ease-in-out) infinite;
 }
-@media (prefers-color-scheme: dark) { .skeleton::after { background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.06), transparent); } }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .skeleton::after { background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.06), transparent); } }
 @keyframes shimmer { to { transform: translateX(100%); } }
 
 /* Staggered entrance for groups of cards (subtle, 30 ms apart) */

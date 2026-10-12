@@ -20,15 +20,14 @@ export const viewport: Viewport = {
   initialScale: 1,
   viewportFit: "cover",
   interactiveWidget: "resizes-content",
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f2f4f8" },
-    { media: "(prefers-color-scheme: dark)", color: "#071528" },
-  ],
+  // Always light: white background, even when the phone is in dark mode
+  colorScheme: "light",
+  themeColor: "#ffffff",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" dir="ltr">
+    <html lang="en" dir="ltr" data-theme="light">
       <body>
         {/* Launch splash: once per session, pure CSS so it never waits on JS */}
         <script dangerouslySetInnerHTML={{ __html: "try{sessionStorage.getItem('yes-splash')?document.documentElement.classList.add('splash-seen'):sessionStorage.setItem('yes-splash','1')}catch(e){}" }} />

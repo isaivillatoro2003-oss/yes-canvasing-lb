@@ -191,7 +191,7 @@ export default function StudentHome() {
             <Button variant={paused ? "primary" : "secondary"} size="lg" onClick={togglePause} loading={busy === "pause"} disabled={!!busy}>
               {paused ? <><Play className="size-4 fill-current" /> Resume</> : <><Pause className="size-4 fill-current" /> Pause</>}
             </Button>
-            <Button variant="secondary" size="lg" onClick={stop} loading={busy === "stop"} disabled={!!busy} className="text-danger">
+            <Button variant="secondary" size="lg" onClick={stop} loading={busy === "stop"} disabled={!!busy} className="whitespace-nowrap text-danger">
               <Square className="size-4 fill-current" /> {t("home.stopWork")}
             </Button>
           </div>
