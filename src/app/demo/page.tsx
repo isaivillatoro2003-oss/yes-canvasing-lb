@@ -35,7 +35,10 @@ function DemoEntry() {
     setBusy(true);
     setError(null);
     try {
-      const status = isConfigured ? await rpc<string>("redeem_demo_code", { p_code: code.trim() }) : "valid";
+      const key = code.trim().toUpperCase();
+      const until = BUILT_IN_CODES[key];
+      const status = until ? (Date.now() < Date.parse(until) ? "valid" : "expired")
+        : isConfigured ? await rpc<string>("redeem_demo_code", { p_code: key }) : "valid";
       if (status === "valid") setStep("pick");
       else setError(MESSAGES[status] ?? MESSAGES.invalid);
     } catch (err) {
@@ -105,6 +108,12 @@ function DemoEntry() {
     </AuthFrame>
   );
 }
+
+// Codes handed out in printed proposals. They live in the app, not the database, so they
+// work for anyone on any browser or account. The demo never touches real data.
+const BUILT_IN_CODES: Record<string, string> = {
+  "DEMO-MAROC26": "2026-11-12T23:59:59+02:00", // Morocco colporteur program, 30 days
+};
 
 export default function DemoPage() {
   return <Suspense><DemoEntry /></Suspense>;
